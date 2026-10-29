@@ -17,9 +17,13 @@ export interface VideoItem {
   id: string;
   title: string;
   description: string;
-  rowId: 'primetime' | 'rodeo' | 'halftime' | 'vault' | 'tailgate';
+  rowId: string;
   rowName: string;
   category: string;
+  thumbUrl?: string;
+  photos?: string[];
+  models?: string[];
+  embedId?: string;
   duration: string;
   durationSec: number;
   views: number;
@@ -50,7 +54,7 @@ export interface VideoItem {
 }
 
 export interface VideoRowConfig {
-  id: 'primetime' | 'rodeo' | 'halftime' | 'vault' | 'tailgate';
+  id: string;
   index: string;
   title: string;
   subtitle: string;

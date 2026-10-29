@@ -4,5 +4,13 @@ dist/
 coverage/
 .DS_Store
 *.log
+
+# Generated datasets & downloaded media (large, reproducible via scripts/)
+public/media/
+public/data/
+data/
+debug-embed.html
+dbg*.html
+nohup.out
 .env*
 !.env.example

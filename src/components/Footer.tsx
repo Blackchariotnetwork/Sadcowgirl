@@ -1,11 +1,11 @@
 import React from 'react';
-import { VIDEO_ROWS } from '../data/mockVideos';
+import { VIDEO_ROWS } from '../data/siteData';
 
 interface FooterProps {
-  onSelectNavRow: (rowId: string) => void;
+  onNavigate: (view: string) => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onSelectNavRow }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   return (
     <footer className="w-full border-t border-[#1E293B] bg-[#070A11] text-slate-400 py-12 px-4 sm:px-8">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
@@ -38,13 +38,13 @@ export const Footer: React.FC<FooterProps> = ({ onSelectNavRow }) => {
         {/* 5 Rows Direct Navigation */}
         <div className="md:col-span-4">
           <h4 className="font-mono text-xs font-bold text-white uppercase tracking-wider mb-3">
-            5 Curated Rows
+            Saddle Up &amp; Browse
           </h4>
           <ul className="space-y-2 text-xs">
             {VIDEO_ROWS.map((row) => (
               <li key={row.id}>
                 <button
-                  onClick={() => onSelectNavRow(row.id)}
+                  onClick={() => onNavigate(`row:${row.id}`)}
                   className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left"
                 >
                   <span className="font-mono text-[10px] text-slate-500">{row.index}.</span>
@@ -52,6 +52,18 @@ export const Footer: React.FC<FooterProps> = ({ onSelectNavRow }) => {
                 </button>
               </li>
             ))}
+            <li>
+              <button onClick={() => onNavigate('categories')} className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left">
+                <span className="font-mono text-[10px] text-slate-500">+</span>
+                <span>All Categories</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => onNavigate('models')} className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left">
+                <span className="font-mono text-[10px] text-slate-500">+</span>
+                <span>The Corral — Models</span>
+              </button>
+            </li>
           </ul>
         </div>
 

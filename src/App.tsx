@@ -1,47 +1,78 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { VideoRow } from './components/VideoRow';
-import { VideoPlayerModal } from './components/VideoPlayerModal';
+import { WatchModal } from './components/WatchModal';
 import { LassoListDrawer } from './components/LassoListDrawer';
 import { UploadModal } from './components/UploadModal';
 import { Footer } from './components/Footer';
-import { VIDEO_ROWS, INITIAL_VIDEOS } from './data/mockVideos';
+import { CategoriesView } from './components/CategoriesView';
+import { CategoryView } from './components/CategoryView';
+import { ModelsView } from './components/ModelsView';
+import { ModelProfile } from './components/ModelProfile';
+import { VideoGrid } from './components/VideoGrid';
+import { loadSiteData, VIDEO_ROWS, SiteData } from './data/siteData';
 import { VideoItem } from './types/video';
 import { soundFX } from './utils/audio';
-import { Search, Flame, Film } from 'lucide-react';
+import { Search, Flame } from 'lucide-react';
+
+type View =
+  | { name: 'home' }
+  | { name: 'categories' }
+  | { name: 'category'; slug: string }
+  | { name: 'models' }
+  | { name: 'model'; slug: string };
+
+function parseHash(): View {
+  const h = window.location.hash;
+  if (h.startsWith('#/categories')) return { name: 'categories' };
+  if (h.startsWith('#/c/')) return { name: 'category', slug: decodeURIComponent(h.slice(4)) };
+  if (h.startsWith('#/models')) return { name: 'models' };
+  if (h.startsWith('#/m/')) return { name: 'model', slug: decodeURIComponent(h.slice(4)) };
+  return { name: 'home' };
+}
+
+function viewToHash(v: View): string {
+  switch (v.name) {
+    case 'categories': return '#/categories';
+    case 'category': return `#/c/${encodeURIComponent(v.slug)}`;
+    case 'models': return '#/models';
+    case 'model': return `#/m/${encodeURIComponent(v.slug)}`;
+    default: return '#/';
+  }
+}
 
 export default function App() {
-  const [videos, setVideos] = useState<VideoItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('sadcowgirl_videos');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch {
-      // fallback
-    }
-    return INITIAL_VIDEOS;
-  });
-
+  const [data, setData] = useState<SiteData | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [view, setView] = useState<View>(() => parseHash());
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [pendingVideoId, setPendingVideoId] = useState<string | null>(() => {
+    const hash = window.location.hash;
+    return hash.startsWith('#video=') ? hash.replace('#video=', '') : null;
+  });
   const [lassoIds, setLassoIds] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('sadcowgirl_lasso_ids');
-      if (saved) {
-        return new Set(JSON.parse(saved));
-      }
+      if (saved) return new Set(JSON.parse(saved));
     } catch {
       // fallback
     }
-    return new Set(['pt-1', 'rv-1']);
+    return new Set();
   });
-
   const [isLassoOpen, setIsLassoOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRowFilter, setActiveRowFilter] = useState<string | null>(null);
+  const didOpenPending = useRef(false);
 
-  // Sync to localStorage
+  // Load site data
+  useEffect(() => {
+    loadSiteData()
+      .then(setData)
+      .catch((e) => setDataError(String(e)));
+  }, []);
+
+  // Sync lasso to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('sadcowgirl_lasso_ids', JSON.stringify(Array.from(lassoIds)));
@@ -50,39 +81,64 @@ export default function App() {
     }
   }, [lassoIds]);
 
+  // Hashchange navigation
   useEffect(() => {
-    try {
-      localStorage.setItem('sadcowgirl_videos', JSON.stringify(videos));
-    } catch {
-      // ignore
+    const onHash = () => {
+      if (window.location.hash.startsWith('#video=')) return;
+      setView(parseHash());
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const navigate = (v: View) => {
+    setView(v);
+    window.location.hash = viewToHash(v);
+    window.scrollTo({ top: 0 });
+  };
+
+  // Deep-link video opening once data is ready
+  useEffect(() => {
+    if (!data || !pendingVideoId || didOpenPending.current) return;
+    const target = data.videos.find((v) => v.id === pendingVideoId);
+    if (target) {
+      didOpenPending.current = true;
+      setActiveVideo(target);
     }
-  }, [videos]);
+    setPendingVideoId(null);
+  }, [data, pendingVideoId]);
 
   // Handle URL hash navigation for direct video links
   useEffect(() => {
     const checkHash = () => {
       const hash = window.location.hash;
-      if (hash.startsWith('#video=')) {
-        const id = hash.replace('#video=', '');
-        const target = videos.find((v) => v.id === id);
-        if (target) {
-          setActiveVideo(target);
-        }
-      }
+      if (!hash.startsWith('#video=') || !data) return;
+      const id = hash.replace('#video=', '');
+      const target = data.videos.find((v) => v.id === id);
+      if (target) setActiveVideo(target);
     };
     checkHash();
     window.addEventListener('hashchange', checkHash);
     return () => window.removeEventListener('hashchange', checkHash);
-  }, [videos]);
+  }, [data]);
+
+  const openVideo = (video: VideoItem) => {
+    setActiveVideo(video);
+    window.history.replaceState(null, '', `#video=${video.id}`);
+  };
+
+  const closeVideo = () => {
+    setActiveVideo(null);
+    if (window.location.hash.startsWith('#video=')) {
+      window.history.replaceState(null, '', viewToHash(view));
+    }
+  };
 
   const toggleLasso = (video: VideoItem) => {
     setLassoIds((prev) => {
       const next = new Set(prev);
-      if (next.has(video.id)) {
-        next.delete(video.id);
-      } else {
-        next.add(video.id);
-      }
+      if (next.has(video.id)) next.delete(video.id);
+      else next.add(video.id);
       return next;
     });
   };
@@ -93,35 +149,75 @@ export default function App() {
   };
 
   const handleAddVideo = (newVideo: VideoItem) => {
-    setVideos((prev) => [newVideo, ...prev]);
-    setActiveVideo(newVideo);
+    if (!data) return;
+    setData({ ...data, videos: [newVideo, ...data.videos] });
+    openVideo(newVideo);
   };
 
   const handleSelectNavRow = (rowId: string) => {
+    if (view.name !== 'home') navigate({ name: 'home' });
     setActiveRowFilter(rowId);
-    const targetElement = document.getElementById(`row-${rowId}`);
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      const el = document.getElementById(`row-${rowId}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 80);
+  };
+
+  const handleOpenModelByName = (name: string) => {
+    const m = data?.models.find((x) => x.name.toLowerCase() === name.toLowerCase());
+    if (m) {
+      setActiveVideo(null);
+      navigate({ name: 'model', slug: m.slug });
     }
   };
 
   // Filtered videos based on search
   const filteredVideos = useMemo(() => {
-    if (!searchQuery.trim()) return videos;
+    if (!data || !searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    return videos.filter(
+    return data.videos.filter(
       (v) =>
         v.title.toLowerCase().includes(q) ||
-        v.description.toLowerCase().includes(q) ||
+        v.category.toLowerCase().includes(q) ||
         v.channel.name.toLowerCase().includes(q) ||
+        (v.models || []).some((m) => m.toLowerCase().includes(q)) ||
         v.tags.some((t) => t.toLowerCase().includes(q))
     );
-  }, [videos, searchQuery]);
+  }, [data, searchQuery]);
 
-  // Saved videos list for Lasso List drawer
   const savedLassoVideos = useMemo(() => {
-    return videos.filter((v) => lassoIds.has(v.id));
-  }, [videos, lassoIds]);
+    return (data?.videos || []).filter((v) => lassoIds.has(v.id));
+  }, [data, lassoIds]);
+
+  const relatedFor = (video: VideoItem): VideoItem[] => {
+    if (!data) return [];
+    const sameCat = data.videos.filter((v) => v.id !== video.id && v.category === video.category);
+    if (sameCat.length >= 6) return sameCat.sort((a, b) => b.views - a.views);
+    const sameRow = data.videos.filter((v) => v.id !== video.id && v.rowId === video.rowId);
+    return (sameCat.length ? [...sameCat, ...sameRow] : sameRow).sort((a, b) => b.views - a.views);
+  };
+
+  if (dataError) {
+    return (
+      <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <p className="font-varsity text-xl font-bold">The corral gate is stuck</p>
+        <p className="text-xs font-mono text-slate-400">Site data failed to load: {dataError}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col items-center justify-center gap-4">
+        <img
+          src="/assets/aistudio/Crying_cowgirl_logo_with_transparent_background_1d4c6f13.png"
+          alt="sadcowgirl.fun"
+          className="w-16 h-16 object-contain animate-pulse"
+        />
+        <p className="font-varsity text-sm font-bold tracking-widest text-slate-400 uppercase">Saddling up&hellip;</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#080C14] text-slate-100 selection:bg-[#E07A5F] selection:text-white">
@@ -132,65 +228,71 @@ export default function App() {
         onOpenUpload={() => setIsUploadOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        activeRowId={activeRowFilter}
-        onSelectNavRow={handleSelectNavRow}
+        activeView={view.name === 'category' ? 'categories' : view.name === 'model' ? 'models' : view.name}
+        onNavigate={(id) => {
+          if (id === 'home') navigate({ name: 'home' });
+          else if (id === 'categories') navigate({ name: 'categories' });
+          else if (id === 'models') navigate({ name: 'models' });
+          else if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
+        }}
       />
 
       {/* Main Content Area */}
       <main className="flex-grow">
-        {/* Stadium Channel Bar / Filter Strip */}
-        <section className="border-b border-[#1E293B] bg-[#0B101C]/80 sticky top-[61px] z-30 backdrop-blur-md">
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-2.5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => {
-                  soundFX.playCheerClick();
-                  setActiveRowFilter(null);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
-                  activeRowFilter === null
-                    ? 'bg-[#E07A5F] text-white shadow-sm'
-                    : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
-                }`}
-              >
-                All 5 Rows
-              </button>
+        {/* Stadium Channel Bar — home only */}
+        {view.name === 'home' && (
+          <section className="border-b border-[#1E293B] bg-[#0B101C]/80 sticky top-[61px] z-30 backdrop-blur-md">
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-2.5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    soundFX.playCheerClick();
+                    setActiveRowFilter(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
+                    activeRowFilter === null
+                      ? 'bg-[#E07A5F] text-white shadow-sm'
+                      : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
+                  }`}
+                >
+                  All 5 Rows
+                </button>
 
-              {VIDEO_ROWS.map((row) => {
-                const isActive = activeRowFilter === row.id;
-                return (
-                  <button
-                    key={row.id}
-                    onClick={() => {
-                      soundFX.playCheerClick();
-                      handleSelectNavRow(row.id);
-                    }}
-                    className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#E07A5F] text-white shadow-sm'
-                        : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
-                    }`}
-                  >
-                    Row {row.index} · {row.title}
-                  </button>
-                );
-              })}
+                {VIDEO_ROWS.map((row) => {
+                  const isActive = activeRowFilter === row.id;
+                  return (
+                    <button
+                      key={row.id}
+                      onClick={() => {
+                        soundFX.playCheerClick();
+                        handleSelectNavRow(row.id);
+                      }}
+                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
+                        isActive
+                          ? 'bg-[#E07A5F] text-white shadow-sm'
+                          : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
+                      }`}
+                    >
+                      Row {row.index} &middot; {row.title}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Stats Indicator */}
+              <div className="hidden md:flex items-center gap-3 text-xs font-mono text-slate-400 shrink-0">
+                <span className="flex items-center gap-1 text-[#E07A5F]">
+                  <Flame className="w-3.5 h-3.5 fill-[#E07A5F]" />
+                  <span>{data.videos.length}+ HD CLIPS ONLINE</span>
+                </span>
+                <span className="text-slate-600">|</span>
+                <span>100% INDEPENDENT COWBOY TUBE</span>
+              </div>
             </div>
+          </section>
+        )}
 
-            {/* Quick Stats Indicator */}
-            <div className="hidden md:flex items-center gap-3 text-xs font-mono text-slate-400 shrink-0">
-              <span className="flex items-center gap-1 text-[#E07A5F]">
-                <Flame className="w-3.5 h-3.5 fill-[#E07A5F]" />
-                <span>28+ HD CLIPS ONLINE</span>
-              </span>
-              <span className="text-slate-600">|</span>
-              <span>100% INDEPENDENT COWBOY TUBE</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Container for the 5 Rows or Search Results */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
           {searchQuery ? (
             /* Search Results View */
@@ -201,7 +303,7 @@ export default function App() {
                     Search Results for &ldquo;{searchQuery}&rdquo;
                   </h2>
                   <p className="text-xs font-mono text-slate-400 mt-0.5">
-                    Found {filteredVideos.length} matching clip{filteredVideos.length === 1 ? '' : 's'} across the 5 rows
+                    Found {filteredVideos.length} matching clip{filteredVideos.length === 1 ? '' : 's'} across the ranch
                   </p>
                 </div>
                 <button
@@ -221,57 +323,56 @@ export default function App() {
                     No Stadium Clips Matched &ldquo;{searchQuery}&rdquo;
                   </h3>
                   <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                    Try searching for &quot;quarterback&quot;, &quot;rodeo&quot;, &quot;brisket&quot;, &quot;halftime&quot;, or &quot;touchdown&quot;.
+                    Try a category, a rider&rsquo;s name, or a tag from the corral.
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {filteredVideos.map((video) => (
-                    <div
-                      key={video.id}
-                      onClick={() => {
-                        soundFX.playWhistleChime();
-                        setActiveVideo(video);
-                      }}
-                      className="group flex flex-col bg-[#101726] border border-[#1E293B] hover:border-[#E07A5F]/70 rounded-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1"
-                    >
-                      <div className="relative w-full aspect-video bg-[#0A0E18] overflow-hidden">
-                        <div className={`w-full h-full bg-gradient-to-tr ${video.cardTheme.bgGradient} flex items-center justify-center`}>
-                          <Film className="w-8 h-8 text-white/50 group-hover:text-[#E07A5F] transition-colors" />
-                        </div>
-                        <span className="absolute bottom-2 right-2 text-xs font-mono bg-black/85 text-white px-2 py-0.5 rounded">
-                          {video.duration}
-                        </span>
-                      </div>
-                      <div className="p-3.5 flex flex-col flex-grow justify-between">
-                        <div>
-                          <h4 className="font-varsity text-sm font-bold text-slate-100 group-hover:text-[#E07A5F] line-clamp-2 transition-colors">
-                            {video.title}
-                          </h4>
-                          <p className="text-xs text-slate-400 mt-1 font-mono">
-                            {video.channel.name} · {video.viewsFormatted} views
-                          </p>
-                        </div>
-                        <span className="text-[11px] font-mono text-[#E07A5F] mt-2 block">
-                          Row: {video.rowName}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <VideoGrid
+                  videos={filteredVideos}
+                  lassoIds={lassoIds}
+                  onSelectVideo={openVideo}
+                  onToggleLasso={toggleLasso}
+                />
               )}
             </div>
+          ) : view.name === 'categories' ? (
+            <CategoriesView
+              data={data}
+              onSelectCategory={(slug) => navigate({ name: 'category', slug })}
+              lassoIds={lassoIds}
+              onSelectVideo={openVideo}
+            />
+          ) : view.name === 'category' ? (
+            <CategoryView
+              data={data}
+              slug={view.slug}
+              onBack={() => navigate({ name: 'categories' })}
+              lassoIds={lassoIds}
+              onSelectVideo={openVideo}
+              onToggleLasso={toggleLasso}
+            />
+          ) : view.name === 'models' ? (
+            <ModelsView data={data} onSelectModel={(slug) => navigate({ name: 'model', slug })} />
+          ) : view.name === 'model' ? (
+            <ModelProfile
+              data={data}
+              slug={view.slug}
+              onBack={() => navigate({ name: 'models' })}
+              lassoIds={lassoIds}
+              onSelectVideo={openVideo}
+              onToggleLasso={toggleLasso}
+            />
           ) : (
             /* The 5 Themed Rows */
             <div>
               {VIDEO_ROWS.map((row) => {
-                const rowVideos = videos.filter((v) => v.rowId === row.id);
+                const rowVideos = data.videos.filter((v) => v.rowId === row.id);
                 return (
                   <VideoRow
                     key={row.id}
                     rowConfig={row}
                     videos={rowVideos}
-                    onSelectVideo={setActiveVideo}
+                    onSelectVideo={openVideo}
                     lassoIds={lassoIds}
                     onToggleLasso={toggleLasso}
                   />
@@ -283,17 +384,22 @@ export default function App() {
       </main>
 
       {/* Collegiate Footer */}
-      <Footer onSelectNavRow={handleSelectNavRow} />
+      <Footer onNavigate={(id) => {
+        if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
+        else if (id === 'categories') navigate({ name: 'categories' });
+        else if (id === 'models') navigate({ name: 'models' });
+      }} />
 
-      {/* Video Player Modal */}
+      {/* Video Watch Modal */}
       {activeVideo && (
-        <VideoPlayerModal
+        <WatchModal
           video={activeVideo}
-          onClose={() => setActiveVideo(null)}
+          onClose={closeVideo}
           isSavedInLasso={lassoIds.has(activeVideo.id)}
           onToggleLasso={toggleLasso}
-          relatedVideos={videos.filter((v) => v.rowId === activeVideo.rowId)}
-          onSelectVideo={setActiveVideo}
+          relatedVideos={relatedFor(activeVideo)}
+          onSelectVideo={openVideo}
+          onOpenModel={handleOpenModelByName}
         />
       )}
 
@@ -302,7 +408,10 @@ export default function App() {
         isOpen={isLassoOpen}
         onClose={() => setIsLassoOpen(false)}
         savedVideos={savedLassoVideos}
-        onSelectVideo={setActiveVideo}
+        onSelectVideo={(v) => {
+          setIsLassoOpen(false);
+          openVideo(v);
+        }}
         onRemoveVideo={(id) => {
           setLassoIds((prev) => {
             const next = new Set(prev);

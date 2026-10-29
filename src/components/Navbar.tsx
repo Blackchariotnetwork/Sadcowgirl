@@ -8,8 +8,8 @@ interface NavbarProps {
   onOpenUpload: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  activeRowId: string | null;
-  onSelectNavRow: (rowId: string) => void;
+  activeView: string;
+  onNavigate: (view: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,17 +18,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenUpload,
   searchQuery,
   onSearchChange,
-  activeRowId,
-  onSelectNavRow,
+  activeView,
+  onNavigate,
 }) => {
   const [showSearchInput, setShowSearchInput] = React.useState(false);
 
   const navLinks = [
-    { id: 'primetime', label: 'Primetime' },
-    { id: 'rodeo', label: 'Viral Rodeo' },
-    { id: 'halftime', label: 'Halftime' },
-    { id: 'vault', label: 'Ranch Vault' },
-    { id: 'tailgate', label: 'Tailgate' },
+    { id: 'home', label: 'Home' },
+    { id: 'categories', label: 'Categories' },
+    { id: 'models', label: 'Models' },
   ];
 
   return (
@@ -60,13 +58,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Zone 2: 5 Clean Single-Line Nav Links */}
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium">
           {navLinks.map((link) => {
-            const isActive = activeRowId === link.id;
+            const isActive = activeView === link.id;
             return (
               <button
                 key={link.id}
                 onClick={() => {
                   soundFX.playCheerClick();
-                  onSelectNavRow(link.id);
+                  onNavigate(link.id);
                 }}
                 className={`transition-colors whitespace-nowrap shrink-0 relative py-1 text-sm tracking-wide ${
                   isActive

@@ -98,11 +98,13 @@ export const LassoListDrawer: React.FC<LassoListDrawerProps> = ({
                   }}
                   className="w-24 aspect-video rounded-lg overflow-hidden bg-black relative shrink-0 cursor-pointer"
                 >
-                  <div
-                    className={`w-full h-full bg-gradient-to-tr ${video.cardTheme.bgGradient} flex items-center justify-center`}
-                  >
-                    <Play className="w-4 h-4 text-white/80 group-hover:text-[#E07A5F] transition-colors" />
-                  </div>
+                  {video.thumbUrl ? (
+                    <img src={video.thumbUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-tr ${video.cardTheme.bgGradient} flex items-center justify-center`}>
+                      <Play className="w-4 h-4 text-white/80 group-hover:text-[#E07A5F] transition-colors" />
+                    </div>
+                  )}
                   <span className="absolute bottom-1 right-1 text-[9px] font-mono bg-black/80 text-white px-1 rounded">
                     {video.duration}
                   </span>

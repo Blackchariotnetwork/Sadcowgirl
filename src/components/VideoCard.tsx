@@ -62,7 +62,14 @@ export const VideoCard: React.FC<VideoCardProps> = ({
         onMouseMove={handleMouseMove}
         className="relative w-full aspect-video bg-[#0A0E18] overflow-hidden"
       >
-        {/* Dynamic Collegiate Football / Rodeo Procedural Background */}
+        {video.thumbUrl ? (
+          <img
+            src={video.thumbUrl}
+            alt={video.title}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
         <div
           className={`absolute inset-0 bg-gradient-to-tr ${video.cardTheme.bgGradient} transition-transform duration-500 group-hover:scale-105`}
         >
@@ -95,6 +102,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           {/* Vignette / Scrim Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0E18] via-transparent to-black/30" />
         </div>
+        )}
 
         {/* Quality Tag Top Left */}
         <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-[10px] font-mono font-bold text-white border border-white/10">
@@ -156,8 +164,12 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
           {/* Channel Info */}
           <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
-            <span className="w-5 h-5 rounded-full bg-[#1A2338] border border-white/10 flex items-center justify-center text-xs shrink-0">
-              {video.channel.avatar}
+            <span className="w-5 h-5 rounded-full bg-[#1A2338] border border-white/10 flex items-center justify-center text-xs shrink-0 overflow-hidden">
+              {video.channel.avatar.startsWith('data:') || video.channel.avatar.startsWith('http') ? (
+                <img src={video.channel.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                video.channel.avatar
+              )}
             </span>
             <span className="font-medium text-slate-300 truncate hover:text-white transition-colors">
               {video.channel.name}

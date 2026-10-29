@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UploadCloud, Film, CheckCircle2 } from 'lucide-react';
 import { VideoItem } from '../types/video';
-import { VIDEO_ROWS } from '../data/mockVideos';
+import { VIDEO_ROWS } from '../data/siteData';
 import { soundFX } from '../utils/audio';
 
 interface UploadModalProps {
