@@ -64,9 +64,26 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" loading="laz
 
 export async function onRequestGet({ request, env }) {
   // Static assets win: /data/*.json, /assets/*, robots.txt, sitemap.xml
-  const asset = await env.ASSETS.fetch(request);
-  if (asset.status !== 404) return asset;
+  // (but never swallow the root HTML page — it needs meta injection)
+  try {
+    const asset = await env.ASSETS.fetch(request);
+    const ctype = asset.headers.get('content-type') || '';
+    if (asset.status !== 404 && !ctype.includes('text/html')) return asset;
+  } catch { /* fall through to SPA handling */ }
 
+  try {
+    return await render(request, env);
+  } catch (e) {
+    // Never take the site down: fall back to the raw SPA
+    try {
+      const spa = await env.ASSETS.fetch(new Request(new URL(request.url).origin + '/index.html'));
+      if (spa.status !== 404) return spa;
+    } catch { /* ignore */ }
+    return new Response('error', { status: 500 });
+  }
+}
+
+async function render(request, env) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
   const canonical = `${url.origin}${path === '/' ? '/' : path}`;
