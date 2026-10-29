@@ -70,6 +70,7 @@ export async function onRequestGet({ request, env }) {
     const ctype = asset.headers.get('content-type') || '';
     if (asset.status !== 404 && !ctype.includes('text/html')) return asset;
   } catch { /* fall through to SPA handling */ }
+  const HTML_NO_CACHE = { 'cache-control': 'no-store, must-revalidate' };
 
   try {
     return await render(request, env);
@@ -198,10 +199,10 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
       .replace(/<meta property="og:description" content="[^"]*" \/>/i, `<meta property="og:description" content="${esc(desc)}">`)
       .replace(/<meta property="og:title" content="[^"]*" \/>/i, `<meta property="og:title" content="${esc(title)}">`)
       .replace(/<\/head>/i, `<link rel="canonical" href="${esc(canonical)}">${extraHead}</head>`);
-    return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', ...HTML_NO_CACHE } });
   }
 
   return new Response(shell(title, desc, canonical, body, extraHead), {
-    headers: { 'content-type': 'text/html; charset=utf-8' },
+    headers: { 'content-type': 'text/html; charset=utf-8', ...HTML_NO_CACHE },
   });
 }
