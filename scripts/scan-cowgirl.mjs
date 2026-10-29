@@ -12,6 +12,12 @@ const OUT = path.join(ROOT, 'data', 'cowgirl.json');
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'video';
 const existing = new Set(JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'selection.json'), 'utf8')).videos.map((v) => v.id));
+const COWGIRL_OUT = path.join(ROOT, 'data', 'cowgirl.json');
+const alreadyCowgirl = fs.existsSync(COWGIRL_OUT)
+  ? JSON.parse(fs.readFileSync(COWGIRL_OUT, 'utf8'))
+  : [];
+const keepExisting = alreadyCowgirl.filter((v) => !existing.has(v.id));
+for (const v of keepExisting) existing.add(v.id);
 
 // Top-N by views with early reject.
 let min = 0;
@@ -62,6 +68,10 @@ for await (let line of rl) {
   if (rows % 1000000 === 0) console.error(`[cowgirl] rows=${rows} matched=${matched} kept=${list.length} ${Math.round((Date.now() - t0) / 1000)}s`);
 }
 
-fs.writeFileSync(OUT, JSON.stringify(list, null, 1));
-console.log(`[cowgirl] done in ${Math.round((Date.now() - t0) / 1000)}s: matched=${matched} kept=${list.length} (limit ${LIMIT})`);
+// Merge with previously imported cowgirl batches, newest-batch first.
+const merged = [...list, ...keepExisting];
+const seen = new Set();
+const finalList = merged.filter((v) => (seen.has(v.id) ? false : (seen.add(v.id), true)));
+fs.writeFileSync(OUT, JSON.stringify(finalList, null, 1));
+console.log(`[cowgirl] done in ${Math.round((Date.now() - t0) / 1000)}s: matched=${matched} new=${list.length} total=${finalList.length} (limit ${LIMIT})`);
 console.log(`[cowgirl] top views: ${list.slice(0, 3).map((v) => v.views.toLocaleString()).join(', ')}`);
