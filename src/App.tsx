@@ -24,6 +24,7 @@ type View =
   | { name: 'models' }
   | { name: 'model'; slug: string }
   | { name: 'legal'; slug: string }
+  | { name: 'cowgirl' }
   | { name: 'admin' };
 
 function parseHash(): View {
@@ -34,6 +35,7 @@ function parseHash(): View {
   if (h.startsWith('#/m/')) return { name: 'model', slug: decodeURIComponent(h.slice(4)) };
   if (h.startsWith('#/legal/')) return { name: 'legal', slug: decodeURIComponent(h.slice(8)) };
   if (h.startsWith('#/admin')) return { name: 'admin' };
+  if (h.startsWith('#/cowgirl')) return { name: 'cowgirl' };
   return { name: 'home' };
 }
 
@@ -45,6 +47,7 @@ function viewToHash(v: View): string {
     case 'model': return `#/m/${encodeURIComponent(v.slug)}`;
     case 'legal': return `#/legal/${encodeURIComponent(v.slug)}`;
     case 'admin': return '#/admin';
+    case 'cowgirl': return '#/cowgirl';
     default: return '#/';
   }
 }
@@ -261,11 +264,12 @@ export default function App() {
         onOpenUpload={() => setIsUploadOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        activeView={view.name === 'category' ? 'categories' : view.name === 'model' ? 'models' : view.name === 'legal' ? 'legal' : view.name}
+        activeView={view.name === 'category' || view.name === 'cowgirl' ? 'categories' : view.name === 'model' ? 'models' : view.name === 'legal' ? 'legal' : view.name}
         onNavigate={(id) => {
           if (id === 'home') navigate({ name: 'home' });
           else if (id === 'categories') navigate({ name: 'categories' });
           else if (id === 'models') navigate({ name: 'models' });
+          else if (id === 'cowgirl') navigate({ name: 'cowgirl' });
           else if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
           else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
         }}
@@ -400,6 +404,20 @@ export default function App() {
             <LegalPage slug={view.slug} onBack={() => navigate({ name: 'home' })} />
           ) : view.name === 'admin' ? (
             <AnalyticsView apiKey={adminKey()} />
+          ) : view.name === 'cowgirl' ? (
+            <CategoryView
+              data={data}
+              slug="cowgirl"
+              onBack={() => navigate({ name: 'home' })}
+              lassoIds={lassoIds}
+              onSelectVideo={openVideo}
+              onToggleLasso={toggleLasso}
+              override={{
+                title: 'The Cowgirl Corral',
+                subtitle: 'Every ride, roping and reverse-cowgirl classic we could lasso — ranked by views',
+                videos: data.videos.filter((v) => v.cowgirl),
+              }}
+            />
           ) : (
             /* The 5 Themed Rows */
             <div>

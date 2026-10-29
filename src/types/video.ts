@@ -24,6 +24,7 @@ export interface VideoItem {
   photos?: string[];
   models?: string[];
   embedId?: string;
+  cowgirl?: boolean;
   duration: string;
   durationSec: number;
   views: number;

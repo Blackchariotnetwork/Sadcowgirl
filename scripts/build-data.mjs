@@ -5,6 +5,9 @@ import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const SEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'selection.json'), 'utf8'));
+const COWGIRL = fs.existsSync(path.join(ROOT, 'data', 'cowgirl.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cowgirl.json'), 'utf8'))
+  : [];
 const MEDIA = fs.existsSync(path.join(ROOT, 'data', 'media.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media.json'), 'utf8'))
   : {};
@@ -13,7 +16,7 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|
 
 // Only keep videos that actually have photos (no dead-end cards).
 const videos = [];
-for (const v of SEL.videos) {
+for (const v of [...SEL.videos, ...COWGIRL.map((v) => ({ ...v, cowgirl: true }))]) {
   const m = MEDIA[v.id];
   if (!m || !m.thumb) continue;
   videos.push({ ...v, thumbUrl: m.thumb, photos: m.photos });

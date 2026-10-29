@@ -9,6 +9,10 @@ import { execFile } from 'node:child_process';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const THUMBS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'dumpthumbs.json'), 'utf8'));
 const SEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'selection.json'), 'utf8'));
+const EXTRA = fs.existsSync(path.join(ROOT, 'data', 'cowgirl.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cowgirl.json'), 'utf8'))
+  : [];
+const ALL_VIDEOS = [...SEL.videos, ...EXTRA];
 const MEDIA_DIR = path.join(ROOT, 'public', 'media');
 const OUT = path.join(ROOT, 'data', 'media.json');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -41,7 +45,7 @@ async function waitCooldown() {
 // Build the download plan: poster + up to MAX_PHOTOS gallery shots.
 const jobs = [];
 const media = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : {};
-for (const v of SEL.videos) {
+for (const v of ALL_VIDEOS) {
   const t = THUMBS[v.id];
   if (!t) continue;
   if (media[v.id]?.thumb) continue; // already done

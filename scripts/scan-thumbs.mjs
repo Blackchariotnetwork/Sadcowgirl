@@ -9,9 +9,12 @@ import readline from 'node:readline';
 const CSV = 'C:/Users/email/.lmstudio/apps/bionic/projects/856087b0-f1a8-44e9-aeb8-55116a6d23de/workspace/tube-cms/data/pornhub.com-db.csv';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const SEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'selection.json'), 'utf8'));
+const EXTRA = fs.existsSync(path.join(ROOT, 'data', 'cowgirl.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cowgirl.json'), 'utf8'))
+  : [];
 const OUT = path.join(ROOT, 'data', 'dumpthumbs.json');
 
-const wanted = new Set(SEL.videos.map((v) => v.id));
+const wanted = new Set([...SEL.videos.map((v) => v.id), ...EXTRA.map((v) => v.id)]);
 const found = new Map();
 let rows = 0, t0 = Date.now();
 
