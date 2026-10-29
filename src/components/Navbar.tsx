@@ -1,6 +1,7 @@
 import React from 'react';
-import { PlusCircle, Bookmark, Search, X } from 'lucide-react';
+import { PlusCircle, Bookmark, Search, X, Menu, ExternalLink, Scale } from 'lucide-react';
 import { soundFX } from '../utils/audio';
+import { LEGAL_LINKS, NETWORK_LINKS } from './LegalPages';
 
 interface NavbarProps {
   lassoCount: number;
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
 }) => {
   const [showSearchInput, setShowSearchInput] = React.useState(false);
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
 
   const navLinks = [
     { id: 'home', label: 'Home' },
@@ -55,7 +57,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </a>
 
-        {/* Zone 2: 5 Clean Single-Line Nav Links */}
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => { soundFX.playCheerClick(); setShowMobileMenu((s) => !s); }}
+          className="lg:hidden p-2 text-slate-200 hover:text-white hover:bg-[#141B2D] rounded-lg transition-colors border border-[#1E293B]"
+          title="Menu"
+        >
+          {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        {/* Zone 2: Clean Single-Line Nav Links (desktop) */}
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-medium">
           {navLinks.map((link) => {
             const isActive = activeView === link.id;
@@ -151,6 +162,73 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Mobile Dropdown Menu */}
+      {showMobileMenu && (
+        <div className="lg:hidden border-t border-[#1E293B] bg-[#0B101C] backdrop-blur-md max-h-[75vh] overflow-y-auto">
+          <div className="max-w-[1440px] mx-auto px-4 py-4 space-y-5">
+            {/* Browse */}
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Browse</p>
+              <div className="grid grid-cols-2 gap-2">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.id}
+                    onClick={() => { soundFX.playCheerClick(); setShowMobileMenu(false); onNavigate(link.id); }}
+                    className={`px-3 py-2 text-left text-sm font-semibold uppercase tracking-wide rounded-lg transition-colors ${
+                      activeView === link.id
+                        ? 'bg-[#E07A5F] text-white'
+                        : 'bg-[#141B2D] text-slate-200 hover:bg-[#1E293B] hover:text-white'
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Network */}
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Blackchariot Network</p>
+              <div className="grid grid-cols-1 gap-1.5">
+                {NETWORK_LINKS.map((n) => (
+                  <a
+                    key={n.url}
+                    href={n.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between px-3 py-2 bg-[#141B2D] hover:bg-[#1E293B] rounded-lg text-sm text-slate-200 hover:text-white transition-colors"
+                  >
+                    <span>{n.name}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{n.tag}</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-1">
+                <Scale className="w-3 h-3" /> Legal
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {LEGAL_LINKS.map((l) => (
+                  <button
+                    key={l.slug}
+                    onClick={() => { soundFX.playCheerClick(); setShowMobileMenu(false); onNavigate(`legal:${l.slug}`); }}
+                    className="px-3 py-2 text-left text-xs font-mono bg-[#141B2D] text-slate-300 hover:bg-[#1E293B] hover:text-white rounded-lg transition-colors"
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

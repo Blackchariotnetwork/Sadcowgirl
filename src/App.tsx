@@ -10,6 +10,7 @@ import { CategoryView } from './components/CategoryView';
 import { ModelsView } from './components/ModelsView';
 import { ModelProfile } from './components/ModelProfile';
 import { VideoGrid } from './components/VideoGrid';
+import { LegalPage } from './components/LegalPages';
 import { loadSiteData, VIDEO_ROWS, SiteData } from './data/siteData';
 import { VideoItem } from './types/video';
 import { soundFX } from './utils/audio';
@@ -20,7 +21,8 @@ type View =
   | { name: 'categories' }
   | { name: 'category'; slug: string }
   | { name: 'models' }
-  | { name: 'model'; slug: string };
+  | { name: 'model'; slug: string }
+  | { name: 'legal'; slug: string };
 
 function parseHash(): View {
   const h = window.location.hash;
@@ -28,6 +30,7 @@ function parseHash(): View {
   if (h.startsWith('#/c/')) return { name: 'category', slug: decodeURIComponent(h.slice(4)) };
   if (h.startsWith('#/models')) return { name: 'models' };
   if (h.startsWith('#/m/')) return { name: 'model', slug: decodeURIComponent(h.slice(4)) };
+  if (h.startsWith('#/legal/')) return { name: 'legal', slug: decodeURIComponent(h.slice(8)) };
   return { name: 'home' };
 }
 
@@ -37,6 +40,7 @@ function viewToHash(v: View): string {
     case 'category': return `#/c/${encodeURIComponent(v.slug)}`;
     case 'models': return '#/models';
     case 'model': return `#/m/${encodeURIComponent(v.slug)}`;
+    case 'legal': return `#/legal/${encodeURIComponent(v.slug)}`;
     default: return '#/';
   }
 }
@@ -228,12 +232,13 @@ export default function App() {
         onOpenUpload={() => setIsUploadOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        activeView={view.name === 'category' ? 'categories' : view.name === 'model' ? 'models' : view.name}
+        activeView={view.name === 'category' ? 'categories' : view.name === 'model' ? 'models' : view.name === 'legal' ? 'legal' : view.name}
         onNavigate={(id) => {
           if (id === 'home') navigate({ name: 'home' });
           else if (id === 'categories') navigate({ name: 'categories' });
           else if (id === 'models') navigate({ name: 'models' });
           else if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
+          else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
         }}
       />
 
@@ -362,6 +367,8 @@ export default function App() {
               onSelectVideo={openVideo}
               onToggleLasso={toggleLasso}
             />
+          ) : view.name === 'legal' ? (
+            <LegalPage slug={view.slug} onBack={() => navigate({ name: 'home' })} />
           ) : (
             /* The 5 Themed Rows */
             <div>
@@ -388,6 +395,7 @@ export default function App() {
         if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
         else if (id === 'categories') navigate({ name: 'categories' });
         else if (id === 'models') navigate({ name: 'models' });
+        else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
       }} />
 
       {/* Video Watch Modal */}
