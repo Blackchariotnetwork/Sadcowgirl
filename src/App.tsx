@@ -288,34 +288,23 @@ export default function App() {
                     setActiveRowFilter(null);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
-                    activeRowFilter === null
-                      ? 'bg-[#E07A5F] text-white shadow-sm'
-                      : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
-                  }`}
+                  className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap bg-[#E07A5F] text-white shadow-sm"
                 >
-                  All 5 Rows
+                  All Videos
                 </button>
 
-                {VIDEO_ROWS.map((row) => {
-                  const isActive = activeRowFilter === row.id;
-                  return (
-                    <button
-                      key={row.id}
-                      onClick={() => {
-                        soundFX.playCheerClick();
-                        handleSelectNavRow(row.id);
-                      }}
-                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap ${
-                        isActive
-                          ? 'bg-[#E07A5F] text-white shadow-sm'
-                          : 'bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]'
-                      }`}
-                    >
-                      Row {row.index} &middot; {row.title}
-                    </button>
-                  );
-                })}
+                {data.categories.slice(0, 7).map((cat) => (
+                  <button
+                    key={cat.slug}
+                    onClick={() => {
+                      soundFX.playCheerClick();
+                      navigate({ name: 'category', slug: cat.slug });
+                    }}
+                    className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors whitespace-nowrap bg-[#141B2D] text-slate-300 hover:text-white hover:bg-[#1E293B]"
+                  >
+                    {cat.name}
+                  </button>
+                ))}
               </div>
 
               {/* Quick Stats Indicator */}
