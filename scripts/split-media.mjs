@@ -15,7 +15,7 @@ const MEDIA_DIR = path.join(ROOT, 'public', 'media');
 const SHARD_CAP = parseInt(process.env.SHARD_CAP || '18000', 10);
 const MANIFEST = path.join(ROOT, 'data', 'media-shards.json');
 
-const files = fs.readdirSync(MEDIA_DIR).filter((f) => f.endsWith('.jpg')).sort();
+const files = fs.readdirSync(MEDIA_DIR).filter((f) => /\.(jpg|webp)$/i.test(f)).sort();
 const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) : {};
 
 // Current shard loads

@@ -8,6 +8,9 @@ const SEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'selection.json')
 const COWGIRL = fs.existsSync(path.join(ROOT, 'data', 'cowgirl.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'cowgirl.json'), 'utf8'))
   : [];
+const BEEG = fs.existsSync(path.join(ROOT, 'data', 'beeg.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'beeg.json'), 'utf8'))
+  : [];
 const MEDIA = fs.existsSync(path.join(ROOT, 'data', 'media.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media.json'), 'utf8'))
   : {};
@@ -28,7 +31,7 @@ const LEGAL_LINKS_SLUGS = ['terms', 'privacy', 'dmca', '2257'];
 
 // Only keep videos that actually have photos (no dead-end cards).
 const videos = [];
-for (const v of [...SEL.videos, ...COWGIRL.map((v) => ({ ...v, cowgirl: true }))]) {
+for (const v of [...SEL.videos, ...COWGIRL.map((v) => ({ ...v, cowgirl: true })), ...BEEG]) {
   const m = MEDIA[v.id];
   if (!m || !m.thumb) continue;
   videos.push({ ...v, thumbUrl: mediaUrl(m.thumb), photos: m.photos.map(mediaUrl) });

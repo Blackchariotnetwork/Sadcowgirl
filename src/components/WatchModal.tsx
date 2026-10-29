@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Bookmark, Share2, Check, Heart, ArrowLeft, ArrowRight } from 'lucide-react';
+import Hls from 'hls.js';
 import { VideoItem } from '../types/video';
 import { Comments } from './Comments';
 import { FUNNELS } from '../ads';
@@ -14,6 +15,34 @@ interface WatchModalProps {
   onSelectVideo: (video: VideoItem) => void;
   onOpenModel?: (name: string) => void;
 }
+
+/** HLS playback via hls.js (beeg proxy streams). Falls back to native HLS on Safari. */
+const HlsPlayer: React.FC<{ src: string; title: string }> = ({ src, title }) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let hls: Hls | null = null;
+    if (Hls.isSupported()) {
+      hls = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 30 });
+      hls.loadSource(src);
+      hls.attachMedia(el);
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal && hls) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+          else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+          else hls.destroy();
+        }
+      });
+      el.play().catch(() => {});
+    } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+      el.src = src;
+      el.play().catch(() => {});
+    }
+    return () => { hls?.destroy(); };
+  }, [src]);
+  return <video ref={ref} controls autoPlay playsInline title={title} className="absolute inset-0 w-full h-full" />;
+};
 
 const fmtDate = (iso: string) => {
   if (!iso) return 'Recently';
@@ -101,6 +130,8 @@ export const WatchModal: React.FC<WatchModalProps> = ({
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
                 referrerPolicy="no-referrer"
               />
+            ) : video.player === 'hls' && video.videoUrl ? (
+              <HlsPlayer src={video.videoUrl} title={video.title} />
             ) : (
               <video src={video.videoUrl} controls autoPlay className="absolute inset-0 w-full h-full" />
             )}

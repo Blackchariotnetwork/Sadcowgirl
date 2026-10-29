@@ -1,0 +1,6 @@
+name = "sadcowgirl-beeg-proxy"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+BEEG_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
