@@ -5,8 +5,9 @@ coverage/
 .DS_Store
 *.log
 
-# Downloaded media is in R2 (never commit)
+# Downloaded media lives in the shard projects (never commit)
 public/media/
+media-shard*/
 data/
 # But commit the runtime JSONs so CI can build without the local dump
 !public/data/

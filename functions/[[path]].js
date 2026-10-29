@@ -63,6 +63,10 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" loading="laz
 }
 
 export async function onRequestGet({ request, env }) {
+  // Static assets win: /data/*.json, /assets/*, robots.txt, sitemap.xml
+  const asset = await env.ASSETS.fetch(request);
+  if (asset.status !== 404) return asset;
+
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
   const canonical = `${url.origin}${path === '/' ? '/' : path}`;
@@ -168,9 +172,9 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
   }
 
   // Serve the SPA for humans (with injected meta), or the SSR page for bots.
-  const asset = await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
+  const spa = await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
   if (!isBot) {
-    let html = await asset.text();
+    let html = await spa.text();
     html = html
       .replace(/<title>[\s\S]*?<\/title>/i, `<title>${esc(title)}</title>`)
       .replace(/<meta name="description" content="[^"]*" \/>/i, `<meta name="description" content="${esc(desc)}">`)

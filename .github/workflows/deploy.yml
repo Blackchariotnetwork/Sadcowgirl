@@ -4,8 +4,8 @@ name: Deploy to Cloudflare Pages
 # images). After R2: delete the 'push:' block comment lines below.
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   deploy:

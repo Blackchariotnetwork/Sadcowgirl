@@ -11,6 +11,17 @@ const COWGIRL = fs.existsSync(path.join(ROOT, 'data', 'cowgirl.json'))
 const MEDIA = fs.existsSync(path.join(ROOT, 'data', 'media.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media.json'), 'utf8'))
   : {};
+// Shard map: filename -> 1|2|... (from split-media.mjs). Photos get served
+// from mediaN.sadcowgirl.fun (free Pages shard projects), not from the main app.
+const SHARDS = fs.existsSync(path.join(ROOT, 'data', 'media-shards.json'))
+  ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media-shards.json'), 'utf8'))
+  : null;
+const mediaUrl = (localPath) => {
+  if (!SHARDS) return localPath;
+  const file = localPath.replace(/^\/media\//, '');
+  const s = SHARDS[file];
+  return s ? `https://media${s}.sadcowgirl.fun/${file}` : localPath;
+};
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'video';
 const LEGAL_LINKS_SLUGS = ['terms', 'privacy', 'dmca', '2257'];
@@ -20,7 +31,7 @@ const videos = [];
 for (const v of [...SEL.videos, ...COWGIRL.map((v) => ({ ...v, cowgirl: true }))]) {
   const m = MEDIA[v.id];
   if (!m || !m.thumb) continue;
-  videos.push({ ...v, thumbUrl: m.thumb, photos: m.photos });
+  videos.push({ ...v, thumbUrl: mediaUrl(m.thumb), photos: m.photos.map(mediaUrl) });
 }
 
 // Categories recomputed over the kept set (primary category only — the
@@ -54,6 +65,7 @@ const models = [...modelMap.values()]
 for (const m of models) {
   const top = videos.filter((v) => m.videoIds.includes(v.id)).sort((a, b) => b.views - a.views)[0];
   m.photo = top ? top.thumbUrl : undefined;
+  // (thumbUrl already rewritten to shard URLs above)
 }
 
 // robots.txt + sitemap.xml

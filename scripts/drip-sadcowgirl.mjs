@@ -3,8 +3,8 @@
 // cowgirl-tagged videos and ships a fresh deployment.
 // Pipeline: scan-cowgirl (new batch) -> scan-thumbs -> fetch-media -> build-data -> deploy.
 //
-// Gates: skips unless R2 is active (post-migration) so we never breach the
-// 20k static-file ceiling on Pages.
+// Gates: media shards must stay under the per-deployment file cap.
+// (R2 not needed — media lives in free media-shard Pages projects.)
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,25 +20,14 @@ function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', ...opts });
 }
 
-// 1. Gate: R2 active?
-let r2Ok = false;
-try {
-  run('npx.cmd', ['wrangler', 'r2', 'bucket', 'list']);
-  r2Ok = true;
-} catch {
-  const out = (() => { try { return run('npx.cmd', ['wrangler', 'r2', 'bucket', 'list']); } catch (e) { return String(e.stdout || e); } })();
-  if (!/not enabled|ERROR/i.test(String(out))) r2Ok = true;
-}
-if (!r2Ok) {
-  LOG('SKIP: R2 not enabled yet — media must live in R2 before drip can grow the catalog.');
-  process.exit(0);
-}
-
-// 2. Headroom check
-const mediaCount = fs.readdirSync(path.join(ROOT, 'public', 'media')).length;
-if (mediaCount > MAX_MEDIA_FILES) {
-  LOG(`SKIP: ${mediaCount} media files exceeds safe ceiling ${MAX_MEDIA_FILES}.`);
-  process.exit(0);
+// 1. Headroom check: any shard at the cap means the catalog needs a new shard
+// (split-media creates it automatically, so this is informational only).
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media-shards.json'), 'utf8'));
+const shardCounts = {};
+for (const s of Object.values(manifest)) shardCounts[s] = (shardCounts[s] || 0) + 1;
+const full = Object.entries(shardCounts).filter(([, c]) => c >= MAX_MEDIA_FILES);
+if (full.length && Object.keys(shardCounts).length === full.length) {
+  LOG('WARN: all media shards at cap — split-media will create a new one this run.');
 }
 
 // 3. New batch
@@ -47,9 +36,22 @@ run('node', ['scripts/scan-cowgirl.mjs', String(BATCH)]);
 run('node', ['scripts/scan-thumbs.mjs']);
 // 5. Download photos for new ids (resumable)
 run('node', ['scripts/fetch-media.mjs'], { env: { ...process.env, MAXPHOTOS: '6', CONC: '5' } });
-// 6. Build datasets + sitemap
+// 6. Split new files into shards
+run('node', ['scripts/split-media.mjs']);
+// 7. Build datasets + sitemap
 run('node', ['scripts/build-data.mjs']);
-// 7. Deploy
+// 8. Deploy main app + any shard that changed
 run('npx.cmd', ['wrangler', 'pages', 'deploy', 'dist', '--project-name=sadcowgirl', '--branch=main', '--commit-dirty=true']);
+const stateFile = path.join(ROOT, 'data', 'shard-state.json');
+const deployed = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
+const shardDirs = fs.readdirSync(ROOT).filter((d) => /^media-shard\d+$/.test(d));
+for (const dir of shardDirs) {
+  const num = parseInt(dir.replace('media-shard', ''), 10);
+  const count = fs.readdirSync(path.join(ROOT, dir)).length;
+  if (deployed[num] === count) continue;
+  run('npx.cmd', ['wrangler', 'pages', 'deploy', dir, `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true']);
+  deployed[num] = count;
+}
+fs.writeFileSync(stateFile, JSON.stringify(deployed));
 
 LOG(`DONE — batch of up to ${BATCH} imported and deployed.`);
