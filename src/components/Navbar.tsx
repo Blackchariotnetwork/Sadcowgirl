@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
           className="flex items-center gap-3 group whitespace-nowrap shrink-0 select-none"
         >
-          <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-[#E07A5F]/40 bg-[#141B2D] p-0.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-[#E07A5F]/40 bg-[#141B2D] p-0.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
             <img
               src="/assets/aistudio/Crying_cowgirl_logo_with_transparent_background_1d4c6f13.png"
               alt="sadcowgirl.fun logo"

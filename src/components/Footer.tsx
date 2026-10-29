@@ -12,7 +12,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Brand & Description */}
         <div className="md:col-span-5 flex flex-col">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full border border-[#E07A5F]/40 bg-[#141B2D] p-0.5">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-[#E07A5F]/40 bg-[#141B2D] p-0.5">
               <img
                 src="/assets/aistudio/Crying_cowgirl_logo_with_transparent_background_1d4c6f13.png"
                 alt="sadcowgirl.fun"
