@@ -429,12 +429,17 @@ export default function App() {
       </main>
 
       {/* Collegiate Footer */}
-      <Footer onNavigate={(id) => {
-        if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
-        else if (id === 'categories') navigate({ name: 'categories' });
-        else if (id === 'models') navigate({ name: 'models' });
-        else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
-      }} />
+      <Footer
+        categories={data.categories.slice(0, 8)}
+        onNavigate={(id) => {
+          if (id.startsWith('row:')) handleSelectNavRow(id.slice(4));
+          else if (id === 'categories') navigate({ name: 'categories' });
+          else if (id === 'models') navigate({ name: 'models' });
+          else if (id === 'cowgirl') navigate({ name: 'cowgirl' });
+          else if (id.startsWith('cat:')) navigate({ name: 'category', slug: id.slice(4) });
+          else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
+        }}
+      />
 
       {/* Video Watch Modal */}
       {activeVideo && (

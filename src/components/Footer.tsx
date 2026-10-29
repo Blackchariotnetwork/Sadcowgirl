@@ -1,13 +1,13 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
-import { VIDEO_ROWS } from '../data/siteData';
 import { LEGAL_LINKS, NETWORK_LINKS } from './LegalPages';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
+  categories?: { slug: string; name: string }[];
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, categories = [] }) => {
   return (
     <footer className="w-full border-t border-[#1E293B] bg-[#070A11] text-slate-400 py-12 px-4 sm:px-8">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start">
@@ -27,33 +27,41 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <p className="font-body text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
-            The modern collegiate cowboy video tube. Built for Friday night stadium floodlights, 8-second rodeo rides, 350-piece brass halftimes, and RV tailgate bonfires.
+            The wildest cowgirl tube on the range. Thousands of HD clips across dozens of categories — fresh amateurs, legendary riders, and everything in between. No accounts, no nonsense. Saddle up and stay a while.
           </p>
 
           <div className="mt-4 flex items-center gap-2 text-[11px] font-mono text-slate-500">
-            <span>COLLEGIATE DIVISION I TRADITION</span>
+            <span>18+ ONLY</span>
+            <span>·</span>
+            <span>HD DAILY UPDATES</span>
             <span>·</span>
             <span>EST. 2026</span>
           </div>
         </div>
 
-        {/* 5 Rows Direct Navigation */}
+        {/* Categories Direct Navigation */}
         <div className="md:col-span-3">
           <h4 className="font-mono text-xs font-bold text-white uppercase tracking-wider mb-3">
             Saddle Up &amp; Browse
           </h4>
           <ul className="space-y-2 text-xs">
-            {VIDEO_ROWS.map((row) => (
-              <li key={row.id}>
+            {categories.map((cat, i) => (
+              <li key={cat.slug}>
                 <button
-                  onClick={() => onNavigate(`row:${row.id}`)}
+                  onClick={() => onNavigate(`cat:${cat.slug}`)}
                   className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left"
                 >
-                  <span className="font-mono text-[10px] text-slate-500">{row.index}.</span>
-                  <span>{row.title}</span>
+                  <span className="font-mono text-[10px] text-slate-500">{String(i + 1).padStart(2, '0')}.</span>
+                  <span>{cat.name}</span>
                 </button>
               </li>
             ))}
+            <li>
+              <button onClick={() => onNavigate('cowgirl')} className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left">
+                <span className="font-mono text-[10px] text-slate-500">+</span>
+                <span>The Cowgirl Corral</span>
+              </button>
+            </li>
             <li>
               <button onClick={() => onNavigate('categories')} className="hover:text-[#E07A5F] transition-colors flex items-center gap-2 text-left">
                 <span className="font-mono text-[10px] text-slate-500">+</span>
