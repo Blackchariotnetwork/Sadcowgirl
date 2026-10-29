@@ -12,7 +12,7 @@ const MEDIA = fs.existsSync(path.join(ROOT, 'data', 'media.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media.json'), 'utf8'))
   : {};
 // Shard map: filename -> 1|2|... (from split-media.mjs). Photos get served
-// from mediaN.sadcowgirl.fun (free Pages shard projects), not from the main app.
+// from the shard projects' own pages.dev hostnames (stable, project-bound).
 const SHARDS = fs.existsSync(path.join(ROOT, 'data', 'media-shards.json'))
   ? JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media-shards.json'), 'utf8'))
   : null;
@@ -20,7 +20,7 @@ const mediaUrl = (localPath) => {
   if (!SHARDS) return localPath;
   const file = localPath.replace(/^\/media\//, '');
   const s = SHARDS[file];
-  return s ? `https://media${s}.sadcowgirl.fun/${file}` : localPath;
+  return s ? `https://sadcowgirl-media${s}.pages.dev/${file}` : localPath;
 };
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'video';
