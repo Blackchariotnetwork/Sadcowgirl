@@ -47,7 +47,7 @@ for await (let line of rl) {
     const cats = f[5] ? f[5].split(';').map((s) => s.trim()).filter(Boolean) : [];
     if (!cats.length) continue;
     scanned++;
-    const models = f[6] ? f[6].split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const models = f[6] ? f[6].split(/[,;]/).map((s) => s.trim()).filter(Boolean) : [];
     const tags = f[4] ? f[4].split(';').map((t) => t.trim()).filter(Boolean) : [];
     // primary category = first listed
     const cat = cats[0];

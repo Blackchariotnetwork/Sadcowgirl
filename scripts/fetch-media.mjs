@@ -45,7 +45,9 @@ for (const v of SEL.videos) {
   const t = THUMBS[v.id];
   if (!t) continue;
   if (media[v.id]?.thumb) continue; // already done
-  const list = [t.thumb, ...t.photos].filter(Boolean);
+  // NOTE: t.thumb (the single large-variant URL) 401/410s for many rows;
+  // the photo-list URLs carry their own valid mh= hashes. Prefer them.
+  const list = [...t.photos, t.thumb].filter(Boolean);
   const uniq = [...new Set(list)].slice(0, MAX_PHOTOS);
   jobs.push({ id: v.id, urls: uniq });
 }
