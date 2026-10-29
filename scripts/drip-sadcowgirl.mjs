@@ -52,7 +52,16 @@ for (const dir of shardDirs) {
   const count = fs.readdirSync(full).length;
   if (deployed[num] === count) continue;
   // cwd = shard dir so wrangler CANNOT discover the main project's wrangler.toml
-  run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
+  try {
+    run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
+  } catch (e) {
+    // Project may not exist yet — create it and retry once
+    if (/not found|does not exist/i.test(String(e))) {
+      LOG(`creating missing project sadcowgirl-media${num}`);
+      run('npx.cmd', ['wrangler', 'pages', 'project', 'create', `sadcowgirl-media${num}`, '--production-branch=main']);
+      run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
+    } else throw e;
+  }
   deployed[num] = count;
 }
 fs.writeFileSync(stateFile, JSON.stringify(deployed));
