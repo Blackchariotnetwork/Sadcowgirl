@@ -26,28 +26,35 @@ type View =
   | { name: 'cowgirl' }
   | { name: 'admin' };
 
-function parseHash(): View {
-  const h = window.location.hash;
-  if (h.startsWith('#/categories')) return { name: 'categories' };
-  if (h.startsWith('#/c/')) return { name: 'category', slug: decodeURIComponent(h.slice(4)) };
-  if (h.startsWith('#/models')) return { name: 'models' };
-  if (h.startsWith('#/m/')) return { name: 'model', slug: decodeURIComponent(h.slice(4)) };
-  if (h.startsWith('#/legal/')) return { name: 'legal', slug: decodeURIComponent(h.slice(8)) };
-  if (h.startsWith('#/admin')) return { name: 'admin' };
-  if (h.startsWith('#/cowgirl')) return { name: 'cowgirl' };
+function parsePath(): View {
+  // Legacy hash URLs (#/c/x, #video=id) redirect to clean paths.
+  const legacy = window.location.hash;
+  if (legacy.startsWith('#video=')) {
+    window.history.replaceState(null, '', `/watch/${legacy.slice(7)}`);
+  } else if (legacy.startsWith('#/')) {
+    window.history.replaceState(null, '', legacy.slice(1));
+  }
+  const p = window.location.pathname;
+  if (p === '/categories') return { name: 'categories' };
+  if (p.startsWith('/c/')) return { name: 'category', slug: decodeURIComponent(p.slice(3)) };
+  if (p === '/models') return { name: 'models' };
+  if (p.startsWith('/m/')) return { name: 'model', slug: decodeURIComponent(p.slice(3)) };
+  if (p.startsWith('/legal/')) return { name: 'legal', slug: decodeURIComponent(p.slice(7)) };
+  if (p.startsWith('/admin')) return { name: 'admin' };
+  if (p.startsWith('/cowgirl')) return { name: 'cowgirl' };
   return { name: 'home' };
 }
 
-function viewToHash(v: View): string {
+function viewToPath(v: View): string {
   switch (v.name) {
-    case 'categories': return '#/categories';
-    case 'category': return `#/c/${encodeURIComponent(v.slug)}`;
-    case 'models': return '#/models';
-    case 'model': return `#/m/${encodeURIComponent(v.slug)}`;
-    case 'legal': return `#/legal/${encodeURIComponent(v.slug)}`;
-    case 'admin': return '#/admin';
-    case 'cowgirl': return '#/cowgirl';
-    default: return '#/';
+    case 'categories': return '/categories';
+    case 'category': return `/c/${encodeURIComponent(v.slug)}`;
+    case 'models': return '/models';
+    case 'model': return `/m/${encodeURIComponent(v.slug)}`;
+    case 'legal': return `/legal/${encodeURIComponent(v.slug)}`;
+    case 'admin': return '/admin';
+    case 'cowgirl': return '/cowgirl';
+    default: return '/';
   }
 }
 
@@ -72,11 +79,11 @@ function track(kind: string, path: string, videoId?: string) {
 export default function App() {
   const [data, setData] = useState<SiteData | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
-  const [view, setView] = useState<View>(() => parseHash());
+  const [view, setView] = useState<View>(() => parsePath());
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [pendingVideoId, setPendingVideoId] = useState<string | null>(() => {
-    const hash = window.location.hash;
-    return hash.startsWith('#video=') ? hash.replace('#video=', '') : null;
+    const p = window.location.pathname;
+    return p.startsWith('/watch/') ? decodeURIComponent(p.slice(7)) : null;
   });
   const [lassoIds, setLassoIds] = useState<Set<string>>(() => {
     try {
@@ -108,26 +115,23 @@ export default function App() {
     }
   }, [lassoIds]);
 
-  // Hashchange navigation
+  // Popstate navigation (path-based routing)
   useEffect(() => {
-    const onHash = () => {
-      if (window.location.hash.startsWith('#video=')) return;
-      setView(parseHash());
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const onPop = () => setView(parsePath());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const navigate = (v: View) => {
     setView(v);
-    window.location.hash = viewToHash(v);
+    window.history.pushState(null, '', viewToPath(v));
     window.scrollTo({ top: 0 });
   };
 
   // Analytics beacon on every view change
   useEffect(() => {
     if (view.name === 'admin') return;
-    track(view.name === 'home' ? 'view' : view.name, viewToHash(view));
+    track(view.name === 'home' ? 'view' : view.name, viewToPath(view));
   }, [view]);
 
   // Deep-link video opening once data is ready
@@ -141,30 +145,36 @@ export default function App() {
     setPendingVideoId(null);
   }, [data, pendingVideoId]);
 
-  // Handle URL hash navigation for direct video links
+  // Watch-route sync: opens/closes the modal on history navigation
   useEffect(() => {
-    const checkHash = () => {
-      const hash = window.location.hash;
-      if (!hash.startsWith('#video=') || !data) return;
-      const id = hash.replace('#video=', '');
+    const checkWatch = () => {
+      if (!data) return;
+      const p = window.location.pathname;
+      if (!p.startsWith('/watch/')) {
+        setActiveVideo(null);
+        return;
+      }
+      const id = decodeURIComponent(p.slice(7));
       const target = data.videos.find((v) => v.id === id);
       if (target) setActiveVideo(target);
     };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    checkWatch();
+    window.addEventListener('popstate', checkWatch);
+    return () => window.removeEventListener('popstate', checkWatch);
   }, [data]);
 
   const openVideo = (video: VideoItem) => {
     setActiveVideo(video);
-    track('watch', viewToHash(view), video.id);
-    window.history.replaceState(null, '', `#video=${video.id}`);
+    track('watch', viewToPath(view), video.id);
+    window.history.pushState(null, '', `/watch/${video.id}`);
+    window.scrollTo({ top: 0 });
   };
 
   const closeVideo = () => {
     setActiveVideo(null);
-    if (window.location.hash.startsWith('#video=')) {
-      window.history.replaceState(null, '', viewToHash(view));
+    if (window.location.pathname.startsWith('/watch/')) {
+      if (window.history.length > 1) window.history.back();
+      else window.history.replaceState(null, '', viewToPath(view));
     }
   };
 

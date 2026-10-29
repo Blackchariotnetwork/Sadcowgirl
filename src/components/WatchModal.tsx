@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Bookmark, Share2, Check, Heart, ArrowLeft, ArrowRight } from 'lucide-react';
 import { VideoItem } from '../types/video';
+import { Comments } from './Comments';
+import { FUNNELS } from '../ads';
 import { soundFX } from '../utils/audio';
 
 interface WatchModalProps {
@@ -168,6 +170,18 @@ export const WatchModal: React.FC<WatchModalProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* Live-cam funnel */}
+              <a
+                href={FUNNELS.chaturbate}
+                target="_blank"
+                rel="noopener nofollow sponsored"
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#ff4655] hover:bg-[#d93a48] text-white text-xs font-bold tracking-wide transition-colors"
+              >
+                🔴 LIVE NOW — Watch Real Girls Streaming Free
+              </a>
+
+              <Comments videoId={video.id} />
 
               {/* Photo strip */}
               {video.photos && video.photos.length > 0 && (

@@ -64,10 +64,11 @@ Allow: /
 
 Sitemap: ${BASE}/sitemap.xml
 `);
-const staticPaths = ['/#/', '/#/categories', '/#/models', '/#/cowgirl',
-  ...categories.map((c) => `/#/c/${c.slug}`),
-  ...models.map((m) => `/#/m/${m.slug}`),
-  ...LEGAL_LINKS_SLUGS.map((s) => `#/legal/${s}`)];
+const staticPaths = ['/', '/categories', '/models', '/cowgirl',
+  ...categories.map((c) => `/c/${c.slug}`),
+  ...models.map((m) => `/m/${m.slug}`),
+  ...LEGAL_LINKS_SLUGS.map((s) => `/legal/${s}`),
+  ...videos.map((v) => `/watch/${v.id}`)];
 const today = new Date().toISOString().slice(0, 10);
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

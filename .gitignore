@@ -5,10 +5,11 @@ coverage/
 .DS_Store
 *.log
 
-# Generated datasets & downloaded media (large, reproducible via scripts/)
+# Downloaded media is in R2 (never commit)
 public/media/
-public/data/
 data/
+# But commit the runtime JSONs so CI can build without the local dump
+!public/data/
 debug-embed.html
 dbg*.html
 nohup.out
