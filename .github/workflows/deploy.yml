@@ -1,9 +1,11 @@
 name: Deploy to Cloudflare Pages
 
+# NOTE: push-trigger disabled until R2 migration completes (CI builds have no
+# images). After R2: delete the 'push:' block comment lines below.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  # push:
+  #   branches: [main]
 
 jobs:
   deploy:
