@@ -13,6 +13,7 @@ const MEDIA = fs.existsSync(path.join(ROOT, 'data', 'media.json'))
   : {};
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'video';
+const LEGAL_LINKS_SLUGS = ['terms', 'privacy', 'dmca', '2257'];
 
 // Only keep videos that actually have photos (no dead-end cards).
 const videos = [];
@@ -54,6 +55,26 @@ for (const m of models) {
   const top = videos.filter((v) => m.videoIds.includes(v.id)).sort((a, b) => b.views - a.views)[0];
   m.photo = top ? top.thumbUrl : undefined;
 }
+
+// robots.txt + sitemap.xml
+const BASE = 'https://sadcowgirl.fun';
+fs.writeFileSync(path.join(ROOT, 'public', 'robots.txt'),
+`User-agent: *
+Allow: /
+
+Sitemap: ${BASE}/sitemap.xml
+`);
+const staticPaths = ['/#/', '/#/categories', '/#/models', '/#/cowgirl',
+  ...categories.map((c) => `/#/c/${c.slug}`),
+  ...models.map((m) => `/#/m/${m.slug}`),
+  ...LEGAL_LINKS_SLUGS.map((s) => `#/legal/${s}`)];
+const today = new Date().toISOString().slice(0, 10);
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticPaths.map((p) => `  <url><loc>${BASE}/${p}</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq></url>`).join('\n')}
+</urlset>
+`;
+fs.writeFileSync(path.join(ROOT, 'public', 'sitemap.xml'), sitemap);
 
 const outDir = path.join(ROOT, 'public', 'data');
 fs.mkdirSync(outDir, { recursive: true });

@@ -1,0 +1,10 @@
+name = "sadcowgirl-media-uploader"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "sadcowgirl-media"
+
+[vars]
+ADMIN_KEY = "sgm-up-7f4d9c21a8e64b35"

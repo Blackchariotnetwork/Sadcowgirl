@@ -1,12 +1,11 @@
 import React from 'react';
-import { PlusCircle, Bookmark, Search, X, Menu, ExternalLink, Scale } from 'lucide-react';
+import { Bookmark, Search, X, Menu, ExternalLink, Scale } from 'lucide-react';
 import { soundFX } from '../utils/audio';
 import { LEGAL_LINKS, NETWORK_LINKS } from './LegalPages';
 
 interface NavbarProps {
   lassoCount: number;
   onOpenLassoList: () => void;
-  onOpenUpload: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   activeView: string;
@@ -16,7 +15,6 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   lassoCount,
   onOpenLassoList,
-  onOpenUpload,
   searchQuery,
   onSearchChange,
   activeView,
@@ -150,17 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
 
-          {/* Primary Action Button */}
-          <button
-            onClick={() => {
-              soundFX.playWhistleChime();
-              onOpenUpload();
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#E07A5F] hover:bg-[#C25D42] rounded-lg shadow-sm transition-colors whitespace-nowrap shrink-0"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Upload Reel</span>
-          </button>
+
         </div>
       </div>
 

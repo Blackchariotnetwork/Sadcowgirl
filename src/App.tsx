@@ -3,7 +3,6 @@ import { Navbar } from './components/Navbar';
 import { VideoRow } from './components/VideoRow';
 import { WatchModal } from './components/WatchModal';
 import { LassoListDrawer } from './components/LassoListDrawer';
-import { UploadModal } from './components/UploadModal';
 import { Footer } from './components/Footer';
 import { CategoriesView } from './components/CategoriesView';
 import { CategoryView } from './components/CategoryView';
@@ -89,7 +88,6 @@ export default function App() {
     return new Set();
   });
   const [isLassoOpen, setIsLassoOpen] = useState(false);
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRowFilter, setActiveRowFilter] = useState<string | null>(null);
   const didOpenPending = useRef(false);
@@ -184,12 +182,6 @@ export default function App() {
     setLassoIds(new Set());
   };
 
-  const handleAddVideo = (newVideo: VideoItem) => {
-    if (!data) return;
-    setData({ ...data, videos: [newVideo, ...data.videos] });
-    openVideo(newVideo);
-  };
-
   const handleSelectNavRow = (rowId: string) => {
     if (view.name !== 'home') navigate({ name: 'home' });
     setActiveRowFilter(rowId);
@@ -261,7 +253,6 @@ export default function App() {
       <Navbar
         lassoCount={lassoIds.size}
         onOpenLassoList={() => setIsLassoOpen(true)}
-        onOpenUpload={() => setIsUploadOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         activeView={view.name === 'category' || view.name === 'cowgirl' ? 'categories' : view.name === 'model' ? 'models' : view.name === 'legal' ? 'legal' : view.name}
@@ -473,12 +464,6 @@ export default function App() {
         onClearAll={handleClearLasso}
       />
 
-      {/* Upload Reel Modal */}
-      <UploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        onAddVideo={handleAddVideo}
-      />
     </div>
   );
 }
