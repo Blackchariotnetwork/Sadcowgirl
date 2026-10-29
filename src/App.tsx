@@ -11,6 +11,7 @@ import { ModelsView } from './components/ModelsView';
 import { ModelProfile } from './components/ModelProfile';
 import { VideoGrid } from './components/VideoGrid';
 import { LegalPage } from './components/LegalPages';
+import { AnalyticsView } from './components/AnalyticsView';
 import { loadSiteData, VIDEO_ROWS, SiteData } from './data/siteData';
 import { VideoItem } from './types/video';
 import { soundFX } from './utils/audio';
@@ -22,7 +23,8 @@ type View =
   | { name: 'category'; slug: string }
   | { name: 'models' }
   | { name: 'model'; slug: string }
-  | { name: 'legal'; slug: string };
+  | { name: 'legal'; slug: string }
+  | { name: 'admin' };
 
 function parseHash(): View {
   const h = window.location.hash;
@@ -31,6 +33,7 @@ function parseHash(): View {
   if (h.startsWith('#/models')) return { name: 'models' };
   if (h.startsWith('#/m/')) return { name: 'model', slug: decodeURIComponent(h.slice(4)) };
   if (h.startsWith('#/legal/')) return { name: 'legal', slug: decodeURIComponent(h.slice(8)) };
+  if (h.startsWith('#/admin')) return { name: 'admin' };
   return { name: 'home' };
 }
 
@@ -41,7 +44,26 @@ function viewToHash(v: View): string {
     case 'models': return '#/models';
     case 'model': return `#/m/${encodeURIComponent(v.slug)}`;
     case 'legal': return `#/legal/${encodeURIComponent(v.slug)}`;
+    case 'admin': return '#/admin';
     default: return '#/';
+  }
+}
+
+function adminKey(): string {
+  const h = window.location.hash;
+  const qi = h.indexOf('?');
+  if (qi > -1) return new URLSearchParams(h.slice(qi)).get('key') || '';
+  return new URLSearchParams(window.location.search).get('key') || '';
+}
+
+function track(kind: string, path: string, videoId?: string) {
+  try {
+    const payload = JSON.stringify({ path, kind, videoId, referrer: document.referrer || '' });
+    const blob = new Blob([payload], { type: 'application/json' });
+    if (navigator.sendBeacon) navigator.sendBeacon('/api/track', blob);
+    else fetch('/api/track', { method: 'POST', body: payload, headers: { 'content-type': 'application/json' }, keepalive: true });
+  } catch {
+    // analytics must never break the page
   }
 }
 
@@ -101,6 +123,12 @@ export default function App() {
     window.scrollTo({ top: 0 });
   };
 
+  // Analytics beacon on every view change
+  useEffect(() => {
+    if (view.name === 'admin') return;
+    track(view.name === 'home' ? 'view' : view.name, viewToHash(view));
+  }, [view]);
+
   // Deep-link video opening once data is ready
   useEffect(() => {
     if (!data || !pendingVideoId || didOpenPending.current) return;
@@ -128,6 +156,7 @@ export default function App() {
 
   const openVideo = (video: VideoItem) => {
     setActiveVideo(video);
+    track('watch', viewToHash(view), video.id);
     window.history.replaceState(null, '', `#video=${video.id}`);
   };
 
@@ -369,6 +398,8 @@ export default function App() {
             />
           ) : view.name === 'legal' ? (
             <LegalPage slug={view.slug} onBack={() => navigate({ name: 'home' })} />
+          ) : view.name === 'admin' ? (
+            <AnalyticsView apiKey={adminKey()} />
           ) : (
             /* The 5 Themed Rows */
             <div>

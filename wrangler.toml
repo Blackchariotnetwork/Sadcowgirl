@@ -1,0 +1,8 @@
+name = "sadcowgirl"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sadcowgirl-analytics"
+database_id = "c9af807c-6fe5-4b23-ad53-89a485763ad5"
