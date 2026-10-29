@@ -31,8 +31,9 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({ data, onSelectCa
           {data.categories.length} corrals &middot; {fmtViews(data.categories.reduce((s, c) => s + c.totalViews, 0))} total views across the ranch
         </p>
       </div>
+      <p className="text-[11px] font-mono text-slate-500 mb-3">Showing the top 60 by traffic &middot; full index available via search</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {data.categories.map((cat, i) => {
+        {data.categories.slice(0, 60).map((cat, i) => {
           const vids = (byCategory.get(cat.name) || []).filter((v) => v.thumbUrl);
           const tiles = vids.slice(0, 4);
           return (
