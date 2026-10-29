@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-varsity: 'Graduate', Georgia, serif;
+  --font-display: 'Bebas Neue', 'Oswald', sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-cowboy-gold: #E07A5F;
+  --color-cowboy-amber: #D97706;
+  --color-cowboy-navy: #090E17;
+  --color-cowboy-card: #111827;
+  --color-cowboy-border: #1E293B;
+}
+
+/* Custom Collegiate Grid & Utility Patterns */
+.font-varsity {
+  font-family: var(--font-varsity);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Hide scrollbar for clean carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom collegiate varsity stripes */
+.varsity-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(224, 122, 95, 0.15),
+    rgba(224, 122, 95, 0.15) 12px,
+    transparent 12px,
+    transparent 24px
+  );
+}
+
+/* Subtle stadium turf line background */
+.stadium-bg {
+  background-color: #080C14;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(224, 122, 95, 0.12), transparent 70%),
+    linear-gradient(to bottom, transparent 0%, rgba(8, 12, 20, 0.95) 100%);
+}

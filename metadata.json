@@ -1,0 +1,6 @@
+{
+  "name": "sadcowgirl.fun",
+  "description": "Modern collegiate cowboy video tube featuring 5 curated video rows, varsity stadium aesthetic, responsive grid, and immersive player.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
