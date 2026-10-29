@@ -8,6 +8,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
+// Shard folders live OUTSIDE the project tree so wrangler's config discovery
+// can't pick up the main project's wrangler.toml when deploying them.
+const SHARD_BASE = path.resolve(ROOT, '..', '_media-shards');
 const MEDIA_DIR = path.join(ROOT, 'public', 'media');
 const SHARD_CAP = parseInt(process.env.SHARD_CAP || '18000', 10);
 const MANIFEST = path.join(ROOT, 'data', 'media-shards.json');
@@ -42,13 +45,13 @@ fs.writeFileSync(MANIFEST, JSON.stringify(manifest));
 
 // Materialize shard folders
 for (let s = 1; s <= maxShard; s++) {
-  const dir = path.join(ROOT, `media-shard${s}`);
+  const dir = path.join(SHARD_BASE, `media-shard${s}`);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'index.html'),
     '<!DOCTYPE html><html><body style="background:#080C14;color:#334155;font-family:monospace">sadcowgirl media node</body></html>');
 }
 for (const f of files) {
-  const dir = path.join(ROOT, `media-shard${manifest[f]}`);
+  const dir = path.join(SHARD_BASE, `media-shard${manifest[f]}`);
   const dest = path.join(dir, f);
   if (!fs.existsSync(dest)) {
     fs.copyFileSync(path.join(MEDIA_DIR, f), dest);

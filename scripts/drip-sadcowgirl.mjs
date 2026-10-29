@@ -44,12 +44,15 @@ run('node', ['scripts/build-data.mjs']);
 run('npx.cmd', ['wrangler', 'pages', 'deploy', 'dist', '--project-name=sadcowgirl', '--branch=main', '--commit-dirty=true']);
 const stateFile = path.join(ROOT, 'data', 'shard-state.json');
 const deployed = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
-const shardDirs = fs.readdirSync(ROOT).filter((d) => /^media-shard\d+$/.test(d));
+const SHARD_BASE = path.resolve(ROOT, '..', '_media-shards');
+const shardDirs = fs.existsSync(SHARD_BASE) ? fs.readdirSync(SHARD_BASE).filter((d) => /^media-shard\d+$/.test(d)) : [];
 for (const dir of shardDirs) {
   const num = parseInt(dir.replace('media-shard', ''), 10);
-  const count = fs.readdirSync(path.join(ROOT, dir)).length;
+  const full = path.join(SHARD_BASE, dir);
+  const count = fs.readdirSync(full).length;
   if (deployed[num] === count) continue;
-  run('npx.cmd', ['wrangler', 'pages', 'deploy', dir, `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true']);
+  // cwd = shard dir so wrangler CANNOT discover the main project's wrangler.toml
+  run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
   deployed[num] = count;
 }
 fs.writeFileSync(stateFile, JSON.stringify(deployed));
