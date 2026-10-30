@@ -25,3 +25,9 @@ CREATE TABLE IF NOT EXISTS comments (
   likes INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_comments_video ON comments (video_id);
+
+CREATE TABLE IF NOT EXISTS excluded_visitors (
+  visitor TEXT PRIMARY KEY,
+  note TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

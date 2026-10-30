@@ -36,6 +36,12 @@ export async function onRequestPost({ request, env }) {
     const ip = request.headers.get('CF-Connecting-IP') || '';
     const visitor = ip ? (await sha256(ip + '|' + ua)).slice(0, 32) : '';
 
+    // Owner / test traffic exclusion list
+    if (visitor) {
+      const ex = await env.DB.prepare('SELECT 1 FROM excluded_visitors WHERE visitor = ?').bind(visitor).first();
+      if (ex) return json({ ok: true, skipped: true });
+    }
+
     await env.DB.prepare(
       `INSERT INTO visits (ts, path, video_id, kind, referrer, country, device, browser, visitor)
        VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?)`
