@@ -205,8 +205,9 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
   const spa = await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
   if (!isBot) {
     let html = await spa.text();
+    // Popunder: everywhere EXCEPT the home page
+    if (path !== '/') html = html.replace(/<\/head>/i, AD_POPUNDER_TAG + '</head>');
     html = html
-      .replace(/<\/head>/i, AD_POPUNDER_TAG + '</head>')
       .replace(/<title>[\s\S]*?<\/title>/i, `<title>${esc(title)}</title>`)
       .replace(/<meta name="description" content="[^"]*" \/>/i, `<meta name="description" content="${esc(desc)}">`)
       .replace(/<meta property="og:description" content="[^"]*" \/>/i, `<meta property="og:description" content="${esc(desc)}">`)
