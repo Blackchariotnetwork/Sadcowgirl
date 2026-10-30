@@ -1,32 +1,55 @@
 // Ad stack config for sadcowgirl.fun.
 //
-// IMPORTANT: Adsterra/Adtng zones are DOMAIN-BOUND — never reuse the
-// lewdlevel/allgoodleaks spot IDs (see ccc-ad-deployment.md). When you create
-// zones for sadcowgirl.fun in the Adsterra dashboard, paste them below and
-// flip the flags to true.
+// Adsterra zones are DOMAIN-BOUND — never reuse another site's zone codes.
+// Zone inventory (from the publisher API, domain 6161716):
+//   31997464  300x250      in-feed banner   — needs dashboard invoke key
+//   31997468  728x90       desktop banner   — needs dashboard invoke key
+//   31997472  160x600      side rail        — needs dashboard invoke key
+//   31997476  160x300      side rail (alt)  — needs dashboard invoke key
+//   31997480  468x60       banner (alt)     — needs dashboard invoke key
+//   31997484  Popunder     LIVE (injected server-side in functions/[[path]].js)
+//   31997488  Social Bar                    — needs dashboard script
+//   31997492  320x50       mobile sticky    — needs dashboard invoke key
+//   31997495  NativeBanner                  — needs dashboard invoke key
+//   31997499  Smartlink    direct URL below (API-exposed)
+//
+// NOTE: the publisher API only exposes popunder/smartlink/directlink codes —
+// banner + social + native invoke keys must be copied from the dashboard's
+// "Get code" buttons, then flipped to true here AND wired in
+// functions/[[path]].js (which owns the human page HTML).
 
 export const ADS = {
-  // Popunder (Direct link) — zone: "Websites → sadcowgirl.fun → Popunder"
   popunder: {
-    enabled: false,
-    src: '', // e.g. https://plXXXXXXX.profitableratecpmnetwork.com/xx/xx/xx/xxxx.js
+    enabled: true,
+    src: 'https://unprofessionalginger.com/35/e5/d5/35e5d53b87a5de76ce8f59cc8f6de86f.js', // zone 31997484
   },
-  // Social Bar — zone: "Websites → sadcowgirl.fun → Social Bar"
   socialBar: {
     enabled: false,
-    src: '',
+    src: '', // zone 31997488
   },
-  // Top banner 300×100 — zone: "Websites → sadcowgirl.fun → Banner 300x100"
-  topBanner: {
+  banner300: {
     enabled: false,
-    spotId: '', // e.g. 10008611
-  },
-  // In-feed 300×250 — zone: "Websites → sadcowgirl.fun → Banner 300x250"
-  inFeed: {
-    enabled: false,
-    spotId: '',
+    invoke: '', // zone 31997464 — 300x250 in-feed
     everyN: 8,
   },
+  banner728: {
+    enabled: false,
+    invoke: '', // zone 31997468 — 728x90 desktop
+  },
+  mobileSticky320: {
+    enabled: false,
+    invoke: '', // zone 31997492 — 320x50 mobile sticky
+  },
+  skyscraper160: {
+    enabled: false,
+    invoke: '', // zone 31997472 — 160x600 side rail
+  },
+  native: {
+    enabled: false,
+    invoke: '', // zone 31997495 — native banner
+  },
+  // Smartlink (zone 31997499) — API-exposed direct URL, account-level.
+  smartlink: 'https://unprofessionalginger.com/nuc41fspk?key=31319bc43f3086632b17cde914e99bde',
 };
 
 // Affiliate funnels — these are account-level campaign links (NOT domain-bound)

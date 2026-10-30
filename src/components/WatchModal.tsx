@@ -14,6 +14,7 @@ interface WatchModalProps {
   relatedVideos: VideoItem[];
   onSelectVideo: (video: VideoItem) => void;
   onOpenModel?: (name: string) => void;
+  phBlocked?: boolean;
 }
 
 /** HLS playback via hls.js (beeg proxy streams). Falls back to native HLS on Safari. */
@@ -59,6 +60,7 @@ export const WatchModal: React.FC<WatchModalProps> = ({
   relatedVideos,
   onSelectVideo,
   onOpenModel,
+  phBlocked,
 }) => {
   const [likesCount, setLikesCount] = useState(video?.likes || 0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -117,6 +119,13 @@ export const WatchModal: React.FC<WatchModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div className="min-h-full flex items-start justify-center p-3 sm:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="w-full max-w-[1200px] bg-[#0B101C] border border-[#1E293B] rounded-2xl overflow-hidden shadow-2xl">
+          {/* ISP-block notice for unplayable sources */}
+          {phBlocked && !video.player && (
+            <div className="bg-[#2B1B12] border-b border-[#E07A5F]/40 px-4 py-2 text-xs font-mono text-amber-200">
+              ⚠ This video&apos;s source (Pornhub) appears blocked on your network — it may not play. The "Up Next" list shows videos that will.
+            </div>
+          )}
+
           {/* Player / Embed */}
           <div className="relative bg-black aspect-video w-full">
             {video.embedId ? (
@@ -128,7 +137,6 @@ export const WatchModal: React.FC<WatchModalProps> = ({
                 frameBorder={0}
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
-                referrerPolicy="no-referrer"
               />
             ) : video.player === 'hls' && video.videoUrl ? (
               <HlsPlayer src={video.videoUrl} title={video.title} />

@@ -7,6 +7,17 @@ const BOT_RE = /bot|crawl|spider|slurp|facebookexternalhit|twitterbot|discordbot
 
 const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// Adsterra popunder — zone 31997484, DOMAIN-BOUND to sadcowgirl.fun (never reuse
+// another site's zone). Injected into the human SPA response so it runs as a
+// first-party script on every page load (the React app must not re-add it).
+const AD_POPUNDER_SRC = 'https://unprofessionalginger.com/35/e5/d5/35e5d53b87a5de76ce8f59cc8f6de86f.js';
+const AD_POPUNDER_TAG = '<script src="' + AD_POPUNDER_SRC + '"></scr' + 'ipt>';
+
+// Shared no-store header for every HTML response (used by render() below —
+// it was previously scoped inside onRequestGet, which made render() throw
+// ReferenceError on every request and silently fall back to the raw SPA).
+const HTML_NO_CACHE = { 'cache-control': 'no-store, must-revalidate' };
+
 function fmtViews(n) {
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
@@ -75,6 +86,7 @@ export async function onRequestGet({ request, env }) {
   try {
     return await render(request, env);
   } catch (e) {
+    console.error('[render failed]', request.url, e && e.stack || String(e));
     // Never take the site down: fall back to the raw SPA
     try {
       const spa = await env.ASSETS.fetch(new Request(new URL(request.url).origin + '/index.html'));
@@ -194,6 +206,7 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
   if (!isBot) {
     let html = await spa.text();
     html = html
+      .replace(/<\/head>/i, AD_POPUNDER_TAG + '</head>')
       .replace(/<title>[\s\S]*?<\/title>/i, `<title>${esc(title)}</title>`)
       .replace(/<meta name="description" content="[^"]*" \/>/i, `<meta name="description" content="${esc(desc)}">`)
       .replace(/<meta property="og:description" content="[^"]*" \/>/i, `<meta property="og:description" content="${esc(desc)}">`)

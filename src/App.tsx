@@ -65,6 +65,29 @@ function adminKey(): string {
   return new URLSearchParams(window.location.search).get('key') || '';
 }
 
+// Detects whether Pornhub's CDN is reachable from the visitor's network
+// (some ISPs, e.g. Tigo Colombia, block phncdn connections). Result cached
+// in sessionStorage for 10 minutes.
+async function probePhncdn(): Promise<boolean> {
+  try {
+    const cached = sessionStorage.getItem('sc_ph_probe');
+    if (cached) {
+      const { ok, at } = JSON.parse(cached);
+      if (Date.now() - at < 600000) return ok;
+    }
+  } catch { /* ignore */ }
+  let ok = false;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4500);
+    const res = await fetch('https://ci.phncdn.com/player/1.js', { mode: 'no-cors', cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(t);
+    ok = res.type === 'opaque' || res.ok;
+  } catch { ok = false; }
+  try { sessionStorage.setItem('sc_ph_probe', JSON.stringify({ ok, at: Date.now() })); } catch { /* ignore */ }
+  return ok;
+}
+
 function track(kind: string, path: string, videoId?: string) {
   try {
     const payload = JSON.stringify({ path, kind, videoId, referrer: document.referrer || '' });
@@ -97,6 +120,8 @@ export default function App() {
   const [isLassoOpen, setIsLassoOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRowFilter, setActiveRowFilter] = useState<string | null>(null);
+  const [phBlocked, setPhBlocked] = useState<boolean>(false);
+  const [showBlockedBanner, setShowBlockedBanner] = useState<boolean>(true);
   const didOpenPending = useRef(false);
 
   // Load site data
@@ -127,6 +152,11 @@ export default function App() {
     window.history.pushState(null, '', viewToPath(v));
     window.scrollTo({ top: 0 });
   };
+
+  // Probe Pornhub CDN reachability (ISP-level blocks, e.g. Tigo Colombia)
+  useEffect(() => {
+    probePhncdn().then((ok) => setPhBlocked(!ok));
+  }, []);
 
   // Analytics beacon on every view change
   useEffect(() => {
@@ -213,7 +243,7 @@ export default function App() {
   const filteredVideos = useMemo(() => {
     if (!data || !searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    return data.videos.filter(
+    const list = data.videos.filter(
       (v) =>
         v.title.toLowerCase().includes(q) ||
         v.category.toLowerCase().includes(q) ||
@@ -221,15 +251,21 @@ export default function App() {
         (v.models || []).some((m) => m.toLowerCase().includes(q)) ||
         v.tags.some((t) => t.toLowerCase().includes(q))
     );
-  }, [data, searchQuery]);
+    // On blocked networks, guaranteed-playable (Beeg) videos first
+    if (phBlocked) list.sort((a, b) => Number(!!b.player) - Number(!!a.player));
+    return list;
+  }, [data, searchQuery, phBlocked]);
 
   const savedLassoVideos = useMemo(() => {
     return (data?.videos || []).filter((v) => lassoIds.has(v.id));
   }, [data, lassoIds]);
 
+  // On blocked networks only Beeg (proxied) videos are guaranteed playable
+  const playable = (v: VideoItem) => (phBlocked ? !!v.player : true);
+
   const relatedFor = (video: VideoItem): VideoItem[] => {
     if (!data) return [];
-    const sameCat = data.videos.filter((v) => v.id !== video.id && v.category === video.category);
+    const sameCat = data.videos.filter((v) => v.id !== video.id && v.category === video.category && playable(v));
     if (sameCat.length >= 6) return sameCat.sort((a, b) => b.views - a.views);
     const sameRow = data.videos.filter((v) => v.id !== video.id && v.rowId === video.rowId);
     return (sameCat.length ? [...sameCat, ...sameRow] : sameRow).sort((a, b) => b.views - a.views);
@@ -275,6 +311,14 @@ export default function App() {
           else if (id.startsWith('legal:')) navigate({ name: 'legal', slug: id.slice(6) });
         }}
       />
+
+      {/* ISP-block notice */}
+      {phBlocked && showBlockedBanner && (
+        <div className="bg-[#2B1B12] border-b border-[#E07A5F]/40 px-4 py-2 text-xs font-mono text-amber-200 flex items-center justify-between gap-3">
+          <span>⚠ Some Pornhub sources aren&apos;t reachable from your network (ISP block). Beeg videos play fine — showing those first.</span>
+          <button onClick={() => setShowBlockedBanner(false)} className="shrink-0 text-amber-200/70 hover:text-white">✕</button>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-grow">
@@ -412,7 +456,7 @@ export default function App() {
             /* The 5 Themed Rows */
             <div>
               {VIDEO_ROWS.map((row) => {
-                const rowVideos = data.videos.filter((v) => v.rowId === row.id);
+                const rowVideos = data.videos.filter((v) => v.rowId === row.id && playable(v));
                 return (
                   <VideoRow
                     key={row.id}
@@ -452,6 +496,7 @@ export default function App() {
           relatedVideos={relatedFor(activeVideo)}
           onSelectVideo={openVideo}
           onOpenModel={handleOpenModelByName}
+          phBlocked={phBlocked}
         />
       )}
 
