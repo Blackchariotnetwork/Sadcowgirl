@@ -12,6 +12,7 @@ const STORE = 'https://store.externulls.com';
 const THUMBS = 'https://thumbs.externulls.com';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const TAG = process.argv[2] || 'tiktok sluts';
+const TAG_SLUG = TAG.toLowerCase().replace(/[^a-z0-9]+/g, '');
 const PAGES = Math.max(1, parseInt(process.argv[3] || '20', 10) || 20);
 const PER_PAGE = 48;
 const MAX_PHOTOS = parseInt(process.env.MAXPHOTOS || '6', 10);
@@ -38,7 +39,9 @@ for (let p = 0; p < PAGES; p++) {
   const offset = p * PER_PAGE;
   let data;
   try {
-    data = await fetchJson(`${STORE}/tag/videos/index?limit=${PER_PAGE}&offset=${offset}&tag=${encodeURIComponent(TAG)}`);
+    // NOTE: the tag goes in the PATH (/tag/videos/{slug}); a ?tag= query param
+    // is silently ignored and returns the generic top listing.
+    data = await fetchJson(`${STORE}/tag/videos/${TAG_SLUG}?limit=${PER_PAGE}&offset=${offset}`);
   } catch (e) {
     console.error(`[beeg-import] page ${p} failed: ${e.message}`);
     break;
