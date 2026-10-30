@@ -12,6 +12,18 @@ export default {
   async fetch(req, env) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url = new URL(req.url);
+    // SpankBang test: can a Worker fetch json_embed past Cloudflare's challenge?
+    const sb = url.pathname.match(/^\/sbtest\/([a-z0-9]+)$/i);
+    if (sb) {
+      const r = await fetch(`https://spankbang.com/${sb[1]}/json_embed`, {
+        headers: { 'User-Agent': env.BEEG_UA, Referer: 'https://spankbang.com/' },
+        signal: AbortSignal.timeout(20000),
+      });
+      const body = await r.text();
+      return new Response(JSON.stringify({ status: r.status, head: body.slice(0, 400) }), {
+        status: 200, headers: { 'content-type': 'application/json', ...CORS },
+      });
+    }
     const m = url.pathname.match(/^\/stream\/beeg\/(\d+)$/);
     if (!m) return new Response('sadcowgirl beeg proxy', { status: 404, headers: CORS });
     const fileId = m[1];

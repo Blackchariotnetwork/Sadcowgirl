@@ -33,6 +33,7 @@ interface RawVideo {
   photos?: string[];
   cowgirl?: boolean;
   player?: string;
+  source?: string;
   embed: string;
   duration: number;
   views: number;
@@ -121,6 +122,7 @@ export function mapVideo(raw: RawVideo, rows: VideoRowConfig[]): VideoItem {
     embedId: raw.player === 'hls' ? undefined : raw.id,
     cowgirl: raw.cowgirl,
     player: raw.player,
+    embedUrl: raw.source === 'youporn' ? raw.embed : undefined,
     videoUrl: raw.player === 'hls'
       ? `https://sadcowgirl-beeg-proxy.blackchariot-net.workers.dev/stream/beeg/${raw.id.replace('beeg-', '')}`
       : raw.embed,

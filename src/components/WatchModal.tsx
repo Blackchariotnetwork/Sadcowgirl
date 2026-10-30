@@ -120,7 +120,7 @@ export const WatchModal: React.FC<WatchModalProps> = ({
       <div className="min-h-full flex items-start justify-center p-3 sm:p-6" onClick={(e) => e.stopPropagation()}>
         <div className="w-full max-w-[1200px] bg-[#0B101C] border border-[#1E293B] rounded-2xl overflow-hidden shadow-2xl">
           {/* ISP-block notice for unplayable sources */}
-          {phBlocked && !video.player && (
+          {phBlocked && !video.player && !video.embedUrl && (
             <div className="bg-[#2B1B12] border-b border-[#E07A5F]/40 px-4 py-2 text-xs font-mono text-amber-200">
               ⚠ This video&apos;s source (Pornhub) appears blocked on your network — it may not play. The "Up Next" list shows videos that will.
             </div>
@@ -131,7 +131,7 @@ export const WatchModal: React.FC<WatchModalProps> = ({
             {video.embedId ? (
               <iframe
                 key={video.id}
-                src={`https://www.pornhub.com/embed/${video.embedId}`}
+                src={video.embedUrl || `https://www.pornhub.com/embed/${video.embedId}`}
                 title={video.title}
                 className="absolute inset-0 w-full h-full"
                 frameBorder={0}

@@ -26,6 +26,7 @@ export interface VideoItem {
   embedId?: string;
   cowgirl?: boolean;
   player?: string;
+  embedUrl?: string;
   duration: string;
   durationSec: number;
   views: number;
