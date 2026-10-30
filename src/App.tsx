@@ -263,6 +263,38 @@ export default function App() {
   // On blocked networks only Beeg (proxied) videos are guaranteed playable
   const playable = (v: VideoItem) => (phBlocked ? !!v.player : true);
 
+  // When PH is blocked, rebuild the 5 home rows from the playable pool
+  // (the default row buckets are mostly PH videos and would render empty)
+  const homeRows = useMemo(() => {
+    if (!data) return [];
+    if (!phBlocked) {
+      return VIDEO_ROWS.map((row) => ({ row, videos: data.videos.filter((v) => v.rowId === row.id) }));
+    }
+    const pool = data.videos.filter(playable);
+    const taken = new Set<string>();
+    const take = (list: VideoItem[], n: number) => {
+      const out: VideoItem[] = [];
+      for (const v of list) {
+        if (out.length >= n) break;
+        if (!taken.has(v.id)) { out.push(v); taken.add(v.id); }
+      }
+      return out;
+    };
+    const byViews = [...pool].sort((a, b) => b.views - a.views);
+    const byLikes = [...pool].sort((a, b) => b.likes / (b.views || 1) - a.likes / (a.views || 1));
+    const byNewest = [...pool].sort((a, b) => (b.uploadDate || '').localeCompare(a.uploadDate || ''));
+    const byOldest = [...pool].filter((v) => v.uploadDate && v.uploadDate < '2016-01-01').sort((a, b) => (a.uploadDate || '9').localeCompare(b.uploadDate || '9'));
+    return VIDEO_ROWS.map((row) => {
+      let vids: VideoItem[] = [];
+      if (row.id === 'primetime') vids = take(byViews, 24);
+      else if (row.id === 'rodeo') vids = take(byLikes, 24);
+      else if (row.id === 'halftime') vids = take(byNewest, 24);
+      else if (row.id === 'vault') vids = take(byOldest, 24);
+      else vids = take([...pool].sort(() => Math.random() - 0.5), 24);
+      return { row, videos: vids };
+    });
+  }, [data, phBlocked]);
+
   const relatedFor = (video: VideoItem): VideoItem[] => {
     if (!data) return [];
     const sameCat = data.videos.filter((v) => v.id !== video.id && v.category === video.category && playable(v));
@@ -455,8 +487,7 @@ export default function App() {
           ) : (
             /* The 5 Themed Rows */
             <div>
-              {VIDEO_ROWS.map((row) => {
-                const rowVideos = data.videos.filter((v) => v.rowId === row.id && playable(v));
+              {homeRows.map(({ row, videos: rowVideos }) => {
                 return (
                   <VideoRow
                     key={row.id}
