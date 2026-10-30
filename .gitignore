@@ -17,3 +17,5 @@ dbg*.html
 nohup.out
 .env*
 !.env.example
+
+.wrangler/
