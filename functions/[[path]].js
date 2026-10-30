@@ -215,8 +215,9 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
   const spa = await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
   if (!isBot) {
     let html = await spa.text();
-    // Popunder: everywhere EXCEPT the home page
-    if (path !== '/') html = html.replace(/<\/head>/i, AD_POPUNDER_TAG + '</head>');
+    // Popunder DISABLED site-wide (zone 31997484) — re-enable the line below
+    // to bring it back. Campaign currently redirects to huntermoorexxx.com.
+    // if (path !== '/') html = html.replace(/<\/head>/i, AD_POPUNDER_TAG + '</head>');
     html = html
       .replace(/<title>[\s\S]*?<\/title>/i, `<title>${esc(title)}</title>`)
       .replace(/<meta name="description" content="[^"]*" \/>/i, `<meta name="description" content="${esc(desc)}">`)
