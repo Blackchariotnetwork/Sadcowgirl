@@ -8,7 +8,8 @@ coverage/
 # Downloaded media lives in the shard projects (never commit)
 public/media/
 media-shard*/
-data/
+# Local working data (anchored to repo root — do NOT ignore src/data)
+/data/
 # But commit the runtime JSONs so CI can build without the local dump
 !public/data/
 debug-embed.html
