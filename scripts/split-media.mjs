@@ -53,10 +53,11 @@ for (let s = 1; s <= maxShard; s++) {
 for (const f of files) {
   const dir = path.join(SHARD_BASE, `media-shard${manifest[f]}`);
   const dest = path.join(dir, f);
-  if (!fs.existsSync(dest)) {
-    fs.copyFileSync(path.join(MEDIA_DIR, f), dest);
-    moved++;
-  }
+  if (fs.existsSync(dest)) continue;
+  const src = path.join(MEDIA_DIR, f);
+  if (!fs.existsSync(src)) { console.warn(`[split] WARN: ${f} in manifest but missing from public/media — skipped`); continue; }
+  fs.copyFileSync(src, dest);
+  moved++;
 }
 
 const summary = Object.entries(shardCounts).map(([s, c]) => `shard${s}=${c}`).join(' ');

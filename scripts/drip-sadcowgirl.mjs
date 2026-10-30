@@ -20,6 +20,11 @@ function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', ...opts });
 }
 
+// Node >= 20.12 refuses to spawn .cmd/.bat (spawnSync EINVAL, the crash this
+// drip hit on 2026-10-29) — call the locally installed wrangler JS directly.
+const WRANGLER_JS = path.join(ROOT, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+const wrangler = (args, opts = {}) => run(process.execPath, [WRANGLER_JS, ...args], opts);
+
 // 1. Headroom check: any shard at the cap means the catalog needs a new shard
 // (split-media creates it automatically, so this is informational only).
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'media-shards.json'), 'utf8'));
@@ -40,8 +45,13 @@ run('node', ['scripts/fetch-media.mjs'], { env: { ...process.env, MAXPHOTOS: '6'
 run('node', ['scripts/split-media.mjs']);
 // 7. Build datasets + sitemap
 run('node', ['scripts/build-data.mjs']);
-// 8. Deploy main app + any shard that changed
-run('npx.cmd', ['wrangler', 'pages', 'deploy', 'dist', '--project-name=sadcowgirl', '--branch=main', '--commit-dirty=true']);
+// 8. Deploy main app + any shard that changed.
+// GUARD: never deploy a half-built dist — a missing index.html once took the
+// whole site down with 500s (the function's SPA fallback 404s without it).
+if (!fs.existsSync(path.join(ROOT, 'dist', 'index.html')) || !fs.existsSync(path.join(ROOT, 'dist', 'assets'))) {
+  throw new Error('dist/ is not a complete build (index.html or assets/ missing) — deploy aborted to protect the live site');
+}
+wrangler(['pages', 'deploy', 'dist', '--project-name=sadcowgirl', '--branch=main', '--commit-dirty=true']);
 const stateFile = path.join(ROOT, 'data', 'shard-state.json');
 const deployed = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : {};
 const SHARD_BASE = path.resolve(ROOT, '..', '_media-shards');
@@ -53,13 +63,13 @@ for (const dir of shardDirs) {
   if (deployed[num] === count) continue;
   // cwd = shard dir so wrangler CANNOT discover the main project's wrangler.toml
   try {
-    run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
+    wrangler(['pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
   } catch (e) {
     // Project may not exist yet — create it and retry once
     if (/not found|does not exist/i.test(String(e))) {
       LOG(`creating missing project sadcowgirl-media${num}`);
-      run('npx.cmd', ['wrangler', 'pages', 'project', 'create', `sadcowgirl-media${num}`, '--production-branch=main']);
-      run('npx.cmd', ['wrangler', 'pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
+      wrangler(['pages', 'project', 'create', `sadcowgirl-media${num}`, '--production-branch=main']);
+      wrangler(['pages', 'deploy', '.', `--project-name=sadcowgirl-media${num}`, '--branch=main', '--commit-dirty=true'], { cwd: full });
     } else throw e;
   }
   deployed[num] = count;
