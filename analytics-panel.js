@@ -1,0 +1,56 @@
+// LewdLevel-style dark terminal analytics panel shell.
+// Served by functions/[[path]].js at /panel-<ADMIN_KEY>/analytics.
+// The rendering logic lives in the static asset /panel-analytics.js.
+export function analyticsPanelHtml() {
+  const css = [
+    ':root{--bg:#07080c;--surface:#0d0f17;--border:#26262b;--border2:#ffffff;--text:#f3f4f6;--muted:#9ca3af;--accent:#E07A5F}',
+    "*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.6 ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace}",
+    'a{color:#fff}',
+    'header{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:2px solid var(--border);position:sticky;top:0;background:rgba(10,11,16,.96);z-index:10}',
+    'header img{height:44px;border:1px solid var(--border);border-radius:8px;background:#14141a;object-fit:contain;padding:2px}',
+    'header b{font-size:14px;letter-spacing:.08em}',
+    'header .sub{color:var(--muted);font-size:11px}',
+    'header .right{margin-left:auto;display:flex;align-items:center;gap:10px}',
+    'select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 10px;font:inherit;font-size:12px}',
+    'main{max-width:1180px;margin:0 auto;padding:24px 24px 60px}',
+    '.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}',
+    '.card{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border2);padding:14px 16px}',
+    '.card .label{font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:700}',
+    '.card .val{font-size:26px;font-weight:800;margin-top:4px}',
+    '.card .note{font-size:11px;color:var(--muted);margin-top:2px}',
+    '.grid2{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-top:12px}',
+    '.panel{background:var(--surface);border:1px solid var(--border);padding:16px 18px}',
+    '.panel h3{margin:0 0 12px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:700}',
+    '.row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px}',
+    '.row .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.row img.th{width:64px;height:36px;object-fit:cover;border:1px solid var(--border);border-radius:3px}',
+    '.barwrap{flex:1;background:#1a1b21;height:10px}',
+    '.bar{height:10px;background:#fff;min-width:2px}',
+    'table{width:100%;border-collapse:collapse;font-size:12px}',
+    'th{font-size:10px;letter-spacing:.1em;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--border2)}',
+    'td{padding:6px 8px;border-bottom:1px solid var(--border)}',
+    '.mono{font-variant-numeric:tabular-nums}',
+    '.chip{background:#fff;color:#000;padding:1px 7px;font-size:10.5px}',
+    '.flag{display:inline-block;width:18px;vertical-align:middle}',
+    '.loading{color:var(--muted);padding:30px 0;text-align:center}',
+    '@media(max-width:820px){.cards{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}',
+  ].join('\n');
+
+  return [
+    '<!doctype html><html lang="en"><head>',
+    '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<meta name="robots" content="noindex, nofollow">',
+    '<title>Traffic Analytics — sadcowgirl.fun</title>',
+    '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>',
+    '<style>' + css + '</style>',
+    '</head><body>',
+    '<header><img src="/assets/aistudio/Crying_cowgirl_logo_with_transparent_background_1d4c6f13.png" alt=""><b>SADCOWGIRL // TRAFFIC ANALYTICS</b>',
+    '<span class="sub">dark matrix terminal · live feed</span>',
+    '<div class="right"><span style="color:var(--muted);font-size:11px">RANGE</span>',
+    '<select id="range"><option value="1">24 hours</option><option value="7" selected>7 days</option><option value="30">30 days</option><option value="90">90 days</option></select>',
+    '</div></header>',
+    '<main id="content"><div class="loading">ESTABLISHING UPLINK // LOADING...</div></main>',
+    '<script src="/panel-analytics.js"></script>',
+    '</body></html>',
+  ].join('\n');
+}

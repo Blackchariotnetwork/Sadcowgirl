@@ -102,6 +102,16 @@ async function render(request, env) {
   const canonical = `${url.origin}${path === '/' ? '/' : path}`;
   const isBot = BOT_RE.test(request.headers.get('User-Agent') || '');
 
+  // LewdLevel-style analytics panel: /panel-<ADMIN_KEY>/analytics
+  const panel = path.match(/^\/panel-([a-z0-9]+)\/analytics$/);
+  if (panel) {
+    if (!env.ADMIN_KEY || panel[1] !== env.ADMIN_KEY) {
+      return new Response('not found', { status: 404 });
+    }
+    const { analyticsPanelHtml } = await import('../analytics-panel.js');
+    return new Response(analyticsPanelHtml(), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' } });
+  }
+
   const fetchJson = async (name) => {
     try {
       const r = await env.ASSETS.fetch(new Request(`${url.origin}/data/${name}`));
