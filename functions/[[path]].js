@@ -38,7 +38,7 @@ function shell(title, desc, canonical, body, extraHead = '') {
 <meta property="og:type" content="website">
 <meta property="og:url" content="${esc(canonical)}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/png" href="/assets/aistudio/Crying_cowgirl_logo_with_transparent_background_1d4c6f13.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
 ${extraHead}
 <style>
 body{margin:0;background:#080C14;color:#F3F4F6;font-family:system-ui,sans-serif}
