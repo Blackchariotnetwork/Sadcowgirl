@@ -213,6 +213,13 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
 
   // Serve the SPA for humans (with injected meta), or the SSR page for bots.
   const spa = await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
+  // CRAWLER REPORTING — Googlebot/Bingbot hits reported to the network
+  // collector server-side (bots don't execute JS, so this can't be a beacon).
+  const ua = request.headers.get('user-agent') || '';
+  const bot = /googlebot/i.test(ua) ? 'google' : /bingbot/i.test(ua) ? 'bing' : '';
+  if (bot) {
+    try { await fetch('https://couchtryouts.com/api/sc-visit?path=' + encodeURIComponent(path) + '&bot=' + bot, { signal: AbortSignal.timeout(4000) }); } catch { }
+  }
   if (!isBot) {
     let html = await spa.text();
     // Popunder DISABLED site-wide (zone 31997484) — re-enable the line below
@@ -224,10 +231,13 @@ ${v.thumbUrl ? `<img src="${esc(v.thumbUrl)}" alt="${esc(v.title)}" style="max-w
       .replace(/<meta property="og:description" content="[^"]*" \/>/i, `<meta property="og:description" content="${esc(desc)}">`)
       .replace(/<meta property="og:title" content="[^"]*" \/>/i, `<meta property="og:title" content="${esc(title)}">`)
       .replace(/<\/head>/i, `<link rel="canonical" href="${esc(canonical)}">${extraHead}</head>`);
+    const BEACON = `<script>try{new Image().src='https://couchtryouts.com/api/sc-visit?path='+encodeURIComponent(location.pathname)+'&ref='+encodeURIComponent(document.referrer||'')}catch(e){}</script>`;
+    html = html.replace(/<\/body>/i, BEACON + '</body>');
     return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', ...HTML_NO_CACHE } });
   }
 
-  return new Response(shell(title, desc, canonical, body, extraHead), {
+  const shellHtml = shell(title, desc, canonical, body, extraHead).replace(/<\/body>/i, `<script>try{new Image().src='https://couchtryouts.com/api/sc-visit?path='+encodeURIComponent(location.pathname)+'&ref='+encodeURIComponent(document.referrer||'')}catch(e){}</script></body>`);
+  return new Response(shellHtml, {
     headers: { 'content-type': 'text/html; charset=utf-8', ...HTML_NO_CACHE },
   });
 }
