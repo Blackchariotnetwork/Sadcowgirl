@@ -194,7 +194,7 @@ ${m.photo ? `<img src="${esc(m.photo)}" alt="${esc(m.name)}" loading="lazy">` : 
         const ld = {
           '@context': 'https://schema.org', '@type': 'VideoObject',
           name: v.title, description: desc, thumbnailUrl: v.thumbUrl ? `${url.origin}${v.thumbUrl}` : undefined,
-          embedUrl: v.embed, uploadDate: v.upload || undefined,
+          embedUrl: v.embed, uploadDate: (v.upload ? ( /^\d{4}-\d{2}-\d{2}$/.test(v.upload) ? v.upload + 'T00:00:00+00:00' : v.upload) : undefined),
           interactionStatistic: { '@type': 'InteractionCounter', interactionType: 'https://schema.org/WatchAction', userInteractionCount: v.views },
         };
         extraHead += `<script type="application/ld+json">${JSON.stringify(ld)}</script>`;
