@@ -260,8 +260,9 @@ export default function App() {
     return (data?.videos || []).filter((v) => lassoIds.has(v.id));
   }, [data, lassoIds]);
 
-  // On blocked networks only Beeg (proxied) videos are guaranteed playable
-  const playable = (v: VideoItem) => (phBlocked ? !!v.player : true);
+  // On blocked networks only proxied (Beeg) + YouPorn embeds are guaranteed playable;
+  // PH embeds reload-loop on those ISPs
+  const playable = (v: VideoItem) => (phBlocked ? (!!v.player || !!v.embedUrl) : true);
 
   // When PH is blocked, rebuild the 5 home rows from the playable pool
   // (the default row buckets are mostly PH videos and would render empty)
